@@ -1,0 +1,219 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  /* Added villager head mosaic background with blur */
+  background-image: linear-gradient(rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85)),
+    repeating-linear-gradient(0deg, transparent, transparent 64px, rgba(0, 0, 0, 0.1) 64px, rgba(0, 0, 0, 0.1) 65px),
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(0, 0, 0, 0.1) 80px, rgba(0, 0, 0, 0.1) 81px),
+    url('data:image/svg+xml;utf8,<svg width="80" height="64" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="64" fill="%23967259"/><rect x="20" y="12" width="40" height="40" fill="%23C59A6F"/><rect x="25" y="20" width="12" height="12" fill="%236B4423"/><rect x="43" y="20" width="12" height="12" fill="%236B4423"/><rect x="32" y="32" width="16" height="8" fill="%234D3319"/><rect x="28" y="8" width="24" height="8" fill="%234D3319"/></svg>');
+  background-size: auto, 80px 64px, 80px 64px, 80px 64px;
+  background-position: center, 0 0, 0 0, 0 0;
+  min-height: 100vh;
+  padding: 20px;
+  /* Added blur filter for subtle background effect */
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  filter: blur(2px);
+  z-index: -1;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+header {
+  text-align: center;
+  color: white;
+  margin-bottom: 40px;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.loading {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 15px 30px;
+  border-radius: 8px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+}
+
+.error {
+  background: rgba(255, 59, 48, 0.9);
+  padding: 15px 30px;
+  border-radius: 8px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+}
+
+.stats {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 12px 25px;
+  border-radius: 8px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.item-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.item-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-container input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.icon-container {
+  position: relative;
+  display: inline-block;
+}
+
+.item-icon {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  cursor: help;
+}
+
+.item-name {
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.tooltip {
+  position: absolute;
+  background: rgba(40, 40, 40, 0.95);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  min-width: 250px;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+
+.tooltip-name {
+  font-weight: bold;
+  margin-bottom: 6px;
+  font-size: 1rem;
+  color: #ffd700;
+}
+
+.tooltip-id {
+  color: #aaa;
+  font-family: "Courier New", monospace;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.tooltip-lore {
+  line-height: 1.4;
+  color: #ddd;
+  white-space: pre-wrap;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+  }
+
+  .item-card {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+}
