@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hypixel SkyBlock – Jerry Items Checklist</title>
+<style>
+  :root { color-scheme: light dark; --bg:#071025; --panel:#0f1724; --muted:#9fb2c8; --accent:#3b82f6; --slot-bg:#2d3338; }
+  body { margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#e6f0fb; padding:18px; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  header{ display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+  h1{ font-size:1.1rem; margin:0; }
+  .controls { display:flex; gap:8px; margin:12px 0 18px; flex-wrap:wrap; }
+  input[type="text"], input[type="search"]{ background:transparent; border:1px solid rgba(255,255,255,.06); color:inherit; padding:8px;border-radius:8px; min-width:220px; }
+  button{ background:var(--accent); color:white; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+  button.ghost{ background:transparent; border:1px solid rgba(255,255,255,.04); color:var(--muted); }
+  .topline{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .layout { display:grid; grid-template-columns: 320px 1fr; gap:16px; align-items:start; }
+  .sidebar { background:var(--panel); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,.03); min-height:120px; }
+  .main { background:var(--panel); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,.03); }
+  .summary{ color:var(--muted); font-size:.92rem; margin-bottom:8px; }
+  .slot { width:32px; height:32px; display:inline-grid; place-items:center; background: linear-gradient(180deg,#3b4148,#272b2f); border:2px solid rgba(0,0,0,.6); border-radius:4px; padding:4px; box-shadow: 0 4px 10px rgba(0,0,0,.6); }
+  .slot img { width:16px; height:16px; image-rendering: pixelated; display:block; }
+  .group { margin-bottom:12px; }
+  .group h3{ margin:6px 0 10px; font-size:1rem; }
+  .searchbar{ display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+  .items { display:grid; grid-template-columns: repeat(auto-fill,minmax(360px,1fr)); gap:10px; }
+  .item { display:grid; grid-template-columns: 40px 1fr 110px; gap:8px; align-items:center; padding:8px; border-radius:8px; background: linear-gradient(180deg, rgba(255,255,255,.01), transparent); border:1px solid rgba(255,255,255,.02); }
+  .item:hover{ background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.006)); }
+  label.item-label{ cursor:pointer; }
+  .rarity{ text-align:center; padding:.18rem .5rem; border-radius:999px; font-size:.82rem; color:var(--muted); border:1px solid rgba(255,255,255,.04); }
+  .tooltip { position:relative; }
+  .tip { display:none; position:absolute; left:44px; top:50%; transform:translateY(-50%); min-width:220px; background:#051024; border-radius:8px; border:1px solid rgba(255,255,255,.04); padding:10px; box-shadow:0 10px 30px rgba(0,0,0,.6); z-index:40; color:#dbe9fb; font-size:.88rem; }
+  .tooltip:hover .tip, .tooltip:focus-within .tip { display:block; }
+  .tip .title{ font-weight:800; margin-bottom:6px; font-size:0.95rem; }
+  .meta{ color:var(--muted); font-size:.82rem; margin-bottom:6px; }
+  .small{ font-size:.8rem; color:var(--muted); }
+  .footer{ margin-top:12px; color:var(--muted); font-size:.88rem; }
+  .actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .kbd{ background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.03); padding:2px 6px; border-radius:6px; font-weight:700; font-size:.82rem; }
+  .status { margin-top:8px; color:var(--muted); font-size:.86rem; }
+  @media (max-width:920px){ .layout{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Jerry items — Hypixel SkyBlock checklist (auto-load with your key)</h1></header>
+
+  <div class="topline">
+    <div class="summary">This page uses your Hypixel API key to query SkyBlock items and automatically shows all Jerry items. If you prefer not to embed the key in this file, delete it from the input before sharing the file.</div>
+  </div>
+
+  <div class="controls">
+    <!-- API key prefilled with the key you provided -->
+    <input id="apiKey" type="text" value="f6755c45-7b46-402e-9f2f-3c15ab1ef967" />
+    <button id="loadBtn">Load Jerry items</button>
+    <button id="refreshBtn" class="ghost">Reload (use cached if available)</button>
+    <button id="exportBtn" class="ghost">Export progress</button>
+    <button id="importBtn" class="ghost">Import progress</button>
+    <button id="clearAllBtn" class="ghost">Clear all</button>
+    <input id="fileInput" type="file" style="display:none" accept=".json" />
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="group">
+        <h3>Search & Filters</h3>
+        <div class="searchbar">
+          <input id="search" type="search" placeholder="Search item name or id (auto filters)" />
+          <select id="rarityFilter">
+            <option value="">All rarities</option>
+            <option value="LEGENDARY">Legendary</option>
+            <option value="EPIC">Epic</option>
+            <option value="RARE">Rare</option>
+            <option value="COMMON">Common</option>
+            <option value="MYTHIC">Mythic</option>
+            <option value="SPECIAL">Special</option>
+          </select>
+        </div>
+        <div class="small">Tip: The API key is embedded in this file. Remove it if you plan to share the file.</div>
+      </div>
+
+      <div class="group">
+        <h3>Quick actions</h3>
+        <div class="actions">
+          <button id="markAll">Mark all</button>
+          <button id="markFound" class="ghost">Mark visible</button>
+          <button id="unmarkAll" class="ghost">Unmark all</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>State</h3>
+        <div id="status" class="status">Idle — no data loaded.</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="resultsInfo" class="small"></div>
+      <div id="items" class="items" aria-live="polite"></div>
+      <div class="footer">
+        <div>Icons come from SkyCrypt CDN (<code>https://sky.shiiyu.moe/api/items/&lt;id&gt;/icon.png</code>). If an icon fails to load, a small fallback is used.</div>
+        <div style="margin-top:6px;" class="small">If the Hypixel API is blocked by CORS in your browser, fetch the JSON server-side (curl) and use the developer console function <code>_jerry_render_from_json</code> to render items from that JSON.</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "jerry-items-checklist:hypixel:v1";
+  const CACHE_KEY = "jerry-items-cache:v1";
+  const apiKeyInput = document.getElementById("apiKey");
+  const loadBtn = document.getElementById("loadBtn");
+  const refreshBtn = document.getElementById("refreshBtn");
+  const itemsContainer = document.getElementById("items");
+  const statusEl = document.getElementById("status");
+  const searchInput = document.getElementById("search");
+  const rarityFilter = document.getElementById("rarityFilter");
+  const markAllBtn = document.getElementById("markAll");
+  const clearAllBtn = document.getElementById("clearAllBtn");
+  const markVisibleBtn = document.getElementById("markFound");
+  const unmarkAllBtn = document.getElementById("unmarkAll");
+  const exportBtn = document.getElementById("exportBtn");
+  const importBtn = document.getElementById("importBtn");
+  const fileInput = document.getElementById("fileInput");
+  const refreshLocalBtn = document.getElementById("refreshBtn");
+
+  let itemsList = [];
+  let visibleItems = [];
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) { saved = {}; }
+
+  function setStatus(msg, isError = false) {
+    statusEl.textContent = msg;
+    statusEl.style.color = isError ? "#ff9b9b" : "var(--muted)";
+  }
+
+  function fetchHypixelItems(key, useCache = true) {
+    return new Promise(async (resolve, reject) => {
+      if (useCache) {
+        try {
+          const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+          if (cached && cached.fetchedAt && Date.now() - cached.fetchedAt < (1000*60*60*6)) {
+            setStatus("Loaded item list from cache.");
+            return resolve(cached.items);
+          }
+        } catch(e){}
+      }
+
+      if (!key) return reject(new Error("No Hypixel API key provided."));
+
+      setStatus("Fetching items from Hypixel API...");
+      const url = `https://api.hypixel.net/resources/skyblock/items?key=${encodeURIComponent(key)}`;
+      try {
+        const r = await fetch(url);
+        if (!r.ok) {
+          const text = await r.text();
+          return reject(new Error(`Hypixel API request failed: ${r.status} ${r.statusText} — ${text}`));
+        }
+        const data = await r.json();
+        if (data && data.items) {
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), items: data.items })); } catch(e){}
+          setStatus("Fetched items from Hypixel API.");
+          return resolve(data.items);
+        } else {
+          return reject(new Error("Unexpected response from Hypixel API."));
+        }
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
+  function renderItems(list) {
+    itemsContainer.innerHTML = "";
+    visibleItems = list;
+    document.getElementById("resultsInfo").textContent = `${list.length} Jerry-related items found.`;
+    if (!list.length) {
+      itemsContainer.innerHTML = `<div class="small">No Jerry items found. Try loading again or adjust the search.</div>`;
+      return;
+    }
+    for (const it of list) {
+      const iconId = encodeURIComponent(it.id || it.item_id || "");
+      const iconUrl = `https://sky.shiiyu.moe/api/items/${iconId}/icon.png`;
+      const checked = !!saved[it.id];
+      const itemEl = document.createElement("div");
+      itemEl.className = "item";
+
+      const slotWrap = document.createElement("div");
+      slotWrap.className = "tooltip";
+      slotWrap.innerHTML = `
+        <div class="slot"><img src="${iconUrl}" alt="${escapeHtml(it.name)}" onerror="this.style.display='none';this.parentNode.innerHTML='<svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 16 16&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><rect width=&quot;16&quot; height=&quot;16&quot; fill=&quot;%238b5cf6&quot; /><text x=&quot;8&quot; y=&quot;12&quot; font-size=&quot;9&quot; text-anchor=&quot;middle&quot; fill=&quot;%23fff&quot; font-family=&quot;monospace&quot;>J</text></svg>';"></div>
+        <div class="tip" role="tooltip">
+          <div class="title">${escapeHtml(it.name)}</div>
+          <div class="meta">${escapeHtml((it.rarity || "Unknown").toString())} — ${escapeHtml((it.type || "").toString())}</div>
+          <div class="small">${escapeHtml((it.description || []).join(" "))}</div>
+          <div style="margin-top:6px;" class="small">id: <code>${escapeHtml(it.id || it.item_id || "")}</code></div>
+        </div>
+      `;
+
+      const labelWrap = document.createElement("label");
+      labelWrap.className = "item-label";
+      labelWrap.setAttribute("tabindex","0");
+      labelWrap.innerHTML = `<div style="font-weight:700">${escapeHtml(it.name)}</div>
+        <div class="small" style="margin-top:4px;color:var(--muted)">${escapeHtml(it.id || it.item_id || "")}</div>`;
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.id = "cb_"+(it.id || it.item_id || Math.random().toString(36).slice(2));
+      input.style.display = "none";
+      input.checked = checked;
+
+      const rarity = document.createElement("div");
+      rarity.className = "rarity";
+      rarity.textContent = it.rarity || "Unknown";
+
+      const toggle = () => {
+        input.checked = !input.checked;
+        saved[it.id] = !!input.checked;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+        if (input.checked) itemEl.style.outline = "2px solid rgba(59,130,246,.14)"; else itemEl.style.outline = "none";
+      };
+
+      labelWrap.addEventListener("click", toggle);
+      labelWrap.addEventListener("keydown", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(); } });
+
+      if (input.checked) itemEl.style.outline = "2px solid rgba(59,130,246,.14)";
+
+      itemEl.appendChild(slotWrap);
+      itemEl.appendChild(labelWrap);
+      itemEl.appendChild(rarity);
+      itemEl.appendChild(input);
+
+      itemsContainer.appendChild(itemEl);
+    }
+  }
+
+  function escapeHtml(s) {
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+  }
+
+  function filterJerry(rawList, query = "", rarity = "") {
+    const q = (query || "").trim().toLowerCase();
+    const r = (rarity || "").trim().toUpperCase();
+    return rawList.filter(it => {
+      const name = (it.name || "").toString().toLowerCase();
+      const id = (it.id || it.item_id || "").toString().toLowerCase();
+      const desc = ((it.description || []) .join(" ") ).toString().toLowerCase();
+      const isJerry = name.includes("jerry") || id.includes("jerry") || desc.includes("jerry");
+      if (!isJerry) return false;
+      if (q) {
+        const matches = name.includes(q) || id.includes(q) || desc.includes(q);
+        if (!matches) return false;
+      }
+      if (r) {
+        if (!it.rarity) return false;
+        if ((it.rarity || "").toString().toUpperCase() !== r) return false;
+      }
+      return true;
+    });
+  }
+
+  loadBtn.addEventListener("click", async () => {
+    const key = apiKeyInput.value.trim();
+    if (!key) { setStatus("Provide your Hypixel API key first.", true); return; }
+    setStatus("Loading item list...");
+    try {
+      const list = await fetchHypixelItems(key, true);
+      itemsList = list;
+      const filtered = filterJerry(itemsList, searchInput.value, rarityFilter.value);
+      renderItems(filtered);
+      setStatus(`Loaded ${filtered.length} Jerry items from Hypixel resources.`);
+    } catch (err) {
+      console.error(err);
+      setStatus("Error loading Hypixel items: " + String(err.message || err), true);
+      const hint = `If CORS blocks the call in your browser, fetch the JSON with curl:
+curl "https://api.hypixel.net/resources/skyblock/items?key=YOUR_KEY" -o items.json
+Then run in console: _jerry_render_from_json(JSON.parse(document.querySelector('textarea#...').value))`;
+      console.log(hint);
+    }
+  });
+
+  function fetchHypixelItems(key, useCache = true) {
+    return new Promise(async (resolve, reject) => {
+      if (useCache) {
+        try {
+          const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+          if (cached && cached.fetchedAt && Date.now() - cached.fetchedAt < (1000*60*60*6)) {
+            setStatus("Loaded item list from cache.");
+            return resolve(cached.items);
+          }
+        } catch(e){}
+      }
+
+      if (!key) return reject(new Error("No Hypixel API key provided."));
+
+      setStatus("Fetching items from Hypixel API...");
+      const url = `https://api.hypixel.net/resources/skyblock/items?key=${encodeURIComponent(key)}`;
+      try {
+        const r = await fetch(url);
+        if (!r.ok) {
+          const text = await r.text();
+          return reject(new Error(`Hypixel API request failed: ${r.status} ${r.statusText} — ${text}`));
+        }
+        const data = await r.json();
+        if (data && data.items) {
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), items: data.items })); } catch(e){}
+          setStatus("Fetched items from Hypixel API.");
+          return resolve(data.items);
+        } else {
+          return reject(new Error("Unexpected response from Hypixel API."));
+        }
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
+  refreshLocalBtn.addEventListener("click", async () => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (cached && cached.items) {
+        itemsList = cached.items;
+        const filtered = filterJerry(itemsList, searchInput.value, rarityFilter.value);
+        renderItems(filtered);
+        setStatus(`Loaded ${filtered.length} Jerry items from local cache.`);
+      } else {
+        setStatus("No local cache found. Use Load Jerry items to fetch from Hypixel API.");
+      }
+    } catch (e) {
+      setStatus("Could not read cache.", true);
+    }
+  });
+
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value;
+    const r = rarityFilter.value;
+    if (!itemsList.length) return;
+    const filtered = filterJerry(itemsList, q, r);
+    renderItems(filtered);
+    setStatus(`Filtered ${filtered.length} Jerry items.`);
+  });
+
+  rarityFilter.addEventListener("change", () => {
+    const q = searchInput.value;
+    const r = rarityFilter.value;
+    if (!itemsList.length) return;
+    const filtered = filterJerry(itemsList, q, r);
+    renderItems(filtered);
+    setStatus(`Filtered ${filtered.length} Jerry items.`);
+  });
+
+  markAllBtn.addEventListener("click", () => {
+    visibleItems.forEach(it => { saved[it.id] = true; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+    renderItems(visibleItems);
+    setStatus("Marked visible Jerry items.");
+  });
+
+  markVisibleBtn.addEventListener("click", () => {
+    visibleItems.forEach(it => { saved[it.id] = true; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+    renderItems(visibleItems);
+    setStatus("Marked visible items.");
+  });
+
+  clearAllBtn.addEventListener("click", () => {
+    for (const k of Object.keys(saved)) delete saved[k];
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+    renderItems(visibleItems);
+    setStatus("Cleared saved state for visible items.");
+  });
+
+  unmarkAllBtn.addEventListener("click", () => {
+    visibleItems.forEach(it => { saved[it.id] = false; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+    renderItems(visibleItems);
+    setStatus("Unmarked visible items.");
+  });
+
+  exportBtn.addEventListener("click", () => {
+    try {
+      const blob = new Blob([JSON.stringify(saved, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "jerry-checklist-progress.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus("Exported progress JSON.");
+    } catch (e) {
+      setStatus("Failed to export: " + e.message, true);
+    }
+  });
+
+  importBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = (ev) => {
+      try {
+        const obj = JSON.parse(ev.target.result);
+        if (typeof obj === "object") {
+          saved = obj;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+          if (visibleItems.length) renderItems(visibleItems);
+          setStatus("Imported progress JSON.");
+        } else {
+          setStatus("Imported file did not contain an object.", true);
+        }
+      } catch (e) {
+        setStatus("Invalid JSON file.", true);
+      }
+    };
+    r.readAsText(f);
+  });
+
+  window._jerry_render_from_json = (json) => {
+    if (!json) return setStatus("No data provided.");
+    if (json.items) {
+      itemsList = json.items;
+    } else if (Array.isArray(json)) {
+      itemsList = json;
+    } else {
+      return setStatus("JSON does not appear to be item array.");
+    }
+    const filtered = filterJerry(itemsList, searchInput.value, rarityFilter.value);
+    renderItems(filtered);
+    setStatus(`Rendered ${filtered.length} Jerry items from provided JSON.`);
+  };
+
+  (function tryLoadCacheOnStart(){
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (cached && cached.items) {
+        itemsList = cached.items;
+        const filtered = filterJerry(itemsList, "", "");
+        renderItems(filtered);
+        setStatus(`Loaded ${filtered.length} Jerry items from local cache (refresh to re-query Hypixel API).`);
+      }
+    } catch(e){}
+  })();
+
+  // Auto-click load on page load using the embedded key
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(()=> {
+      if (apiKeyInput.value && apiKeyInput.value.trim().length > 5) {
+        loadBtn.click();
+      }
+    }, 250);
+  });
+
+})();
+</script>
+</body>
+</html>
