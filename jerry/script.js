@@ -1,31 +1,33 @@
-// Base64 decode and parse skin data
+// Base64 decode and parse skin data to extract texture URL
 function getSkinUrl(skinBase64) {
   try {
-    // Validate base64 string before attempting decode
     if (!skinBase64 || typeof skinBase64 !== "string") {
       return null
     }
 
     const decoded = atob(skinBase64)
     const skinData = JSON.parse(decoded)
+    // Extract the full texture URL from textures.SKIN.url
     return skinData.textures?.SKIN?.url || null
   } catch (error) {
-    // Silent fail - just return null without console errors
     return null
   }
 }
 
 // Get icon URL for an item
 function getIconUrl(item) {
+  // Method 1: If item has skin property, decode and extract texture URL
   if (item.skin) {
-    const skinUrl = getSkinUrl(item.skin)
-    if (skinUrl) return skinUrl
+    const textureUrl = getSkinUrl(item.skin)
+    if (textureUrl) {
+      return textureUrl
+    }
   }
 
-  // Use Minecraft Heads API for better item icon support
+  // Method 2: If no skin, use material name with minecraftitemids.com
   if (item.material) {
-    const materialName = item.material.toLowerCase().replace(/_/g, "-")
-    return `https://mc-heads.net/minecraft/item/${materialName}`
+    const materialName = item.material.toLowerCase()
+    return `https://minecraftitemids.com/item/${materialName}.png`
   }
 
   return null
@@ -130,18 +132,19 @@ function createItemCard(item, index) {
 
   const icon = document.createElement("img")
   icon.className = "item-icon"
+
   const iconUrl = getIconUrl(item)
 
   if (iconUrl) {
     icon.src = iconUrl
     icon.onerror = () => {
-      // Fallback to a placeholder
+      // Fallback to question mark if image fails to load
       icon.src =
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAEklEQVR42mNgGAWjYBSMAggAAAQQAAF/TXiOAAAAAElFTkSuQmCC"
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect fill='%23333' width='64' height='64'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='32' font-family='Arial'%3E?%3C/text%3E%3C/svg%3E"
     }
   } else {
     icon.src =
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAEklEQVR42mNgGAWjYBSMAggAAAQQAAF/TXiOAAAAAElFTkSuQmCC"
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect fill='%23333' width='64' height='64'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='32' font-family='Arial'%3E?%3C/text%3E%3C/svg%3E"
   }
 
   // Create and attach tooltip
@@ -166,7 +169,6 @@ function createItemCard(item, index) {
 
   iconContainer.addEventListener("mouseleave", () => {
     tooltipVisible = false
-    // Small delay before hiding to prevent flicker
     tooltipTimeout = setTimeout(() => {
       tooltip.classList.remove("show")
     }, 100)
@@ -219,7 +221,11 @@ async function loadJerryItems() {
   const gridEl = document.getElementById("items-grid")
 
   try {
-    const response = await fetch("https://api.hypixel.net/resources/skyblock/items")
+    const response = await fetch("https://api.hypixel.net/resources/skyblock/items", {
+      headers: {
+        "API-Key": "f6755c45-7b46-402e-9f2f-3c15ab1ef967",
+      },
+    })
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
