@@ -36,14 +36,11 @@ function getSkinUrl(skinBase64) {
     const decoded = atob(skinBase64);
     const skinData = JSON.parse(decoded);
 
-    // Get the original texture URL from textures.minecraft.net
     const textureUrl = skinData.textures?.SKIN?.url;
     if (!textureUrl) return null;
 
-    // Extract the texture hash (the last part of the URL)
     const hash = textureUrl.replace("http://textures.minecraft.net/texture/", "");
     if (hash) {
-      // Use mc-heads.net for a reliable 2D avatar icon (64px)
       return `https://mc-heads.net/head/${hash}/64`;
     }
 
@@ -58,25 +55,16 @@ function getSkinUrl(skinBase64) {
 async function getIconUrl(item) {
   if (!item) return null;
 
-  // Method 1: Check for custom asset by ID
+  // Method 1: Check for custom asset by ID (voltaccept.com only)
   if (item.id) {
-    const customUrl = `https://or.voltaccept.com/jerry/assets/resources/${item.id}.png`;
+    const itemId = item.id.toLowerCase();
+    const customUrl = `https://or.voltaccept.com/jerry/assets/resources/${itemId}.png`;
     if (await urlExists(customUrl)) {
-      return customUrl;
+      return customUrl; // ✅ Only accept voltaccept.com textures
     }
   }
 
-  // Method 2: Skin texture → mc-heads.net
-  if (item.skin?.value) {
-    const skinUrl = getSkinUrl(item.skin.value);
-    if (skinUrl) return skinUrl;
-  }
-
-  // Method 3: Material → assets.mcasset.cloud
-  if (item.material && ItemENUM && ItemENUM[item.material]) {
-    return `https://assets.mcasset.cloud/1.21.8/assets/minecraft/textures/item/${ItemENUM[item.material]}.png`;
-  }
-
+  // ❌ Skip other fallbacks (skin, mcasset.cloud) since requirement is voltaccept.com only
   return null;
 }
 
@@ -134,6 +122,12 @@ function positionTooltip(tooltip, event) {
 
 // Create item card
 async function createItemCard(item, index) {
+  // Check for valid custom texture first
+  const iconUrl = await getIconUrl(item);
+  if (!iconUrl) {
+    return null; // 🚫 Don't create card if no voltaccept.com texture
+  }
+
   const card = document.createElement("div");
   card.className = "item-card";
 
@@ -165,12 +159,7 @@ async function createItemCard(item, index) {
 
   const icon = document.createElement("img");
   icon.className = "item-icon";
-
-  // Async load icon
-  const iconUrl = await getIconUrl(item);
-  if (iconUrl) {
-    icon.src = iconUrl;
-  }
+  icon.src = iconUrl; // ✅ Guaranteed voltaccept.com texture
 
   // Tooltip
   const tooltip = createTooltip(item);
@@ -237,7 +226,7 @@ function updateStats() {
   document.getElementById("total-count").textContent = total;
 }
 
-// Fetch and display items
+// Fetch and display items from Hypixel + static API
 async function loadJerryItems() {
   const loadingEl = document.getElementById("loading");
   const errorEl = document.getElementById("error");
@@ -245,18 +234,29 @@ async function loadJerryItems() {
   const gridEl = document.getElementById("items-grid");
 
   try {
-    const response = await fetch("https://api.hypixel.net/v2/resources/skyblock/items");
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    // Fetch Hypixel items
+    const hypixelRes = await fetch("https://api.hypixel.net/v2/resources/skyblock/items");
+    if (!hypixelRes.ok) throw new Error(`Hypixel API error: ${hypixelRes.status}`);
+    const hypixelData = await hypixelRes.json();
+    const hypixelItems = hypixelData.items || [];
 
-    const data = await response.json();
-    const items = data.items || [];
+    // Fetch your static Jerry items
+    const staticRes = await fetch("https://or.voltaccept.com/jerry/api/skyblock/items.json");
+    if (!staticRes.ok) throw new Error(`Static API error: ${staticRes.status}`);
+    const staticData = await staticRes.json();
+    const staticItems = staticData.items || [];
 
-    const jerryItems = items.filter(isJerryItem);
+    // Merge both sources
+    const allItems = [...hypixelItems, ...staticItems];
+
+    // Filter Jerry items
+    const jerryItems = allItems.filter(isJerryItem);
     if (jerryItems.length === 0) throw new Error("No Jerry items found!");
 
+    // Build cards only if voltaccept.com texture exists
     for (let i = 0; i < jerryItems.length; i++) {
       const card = await createItemCard(jerryItems[i], i);
-      gridEl.appendChild(card);
+      if (card) gridEl.appendChild(card);
     }
 
     loadingEl.style.display = "none";
