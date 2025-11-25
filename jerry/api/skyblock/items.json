@@ -1,7 +1,7 @@
 {
   "items": [
     { "id": "jerry_rune", "name": "Jerry Rune" },
-    { "id": "jerry_rune2", "name": "Jerry Rune II" },
-    { "id": "jerry_rune3", "name": "Jerry Rune III" }
+    { "id": "jerry_rune_2", "name": "Jerry Rune II" },
+    { "id": "jerry_rune_3", "name": "Jerry Rune III" }
   ]
 }
