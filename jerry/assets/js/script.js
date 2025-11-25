@@ -237,7 +237,7 @@ function createItemCard(item, index) {
     const tier = item.tier.toUpperCase();
 
     // pull hex color from rarity.json
-    const color = rarityColors[tier];
+    const color = rarityColors[tier] || rarityColors["COMMON"];
 
     if (color) {
       // card visual
