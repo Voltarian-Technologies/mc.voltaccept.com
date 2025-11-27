@@ -1,6 +1,6 @@
 // Game state
 let gameState = {
-  candies: 0,
+  candies: 1000000000000000,
   perClick: 1,
   autoRate: 0,
   upgrades: {},
@@ -690,6 +690,8 @@ function applyUpgrade(upgrade) {
       if (upgrade.id === "pet_item_toy_jerry") {
         document.getElementById("jerry").classList.remove("lord")
         document.getElementById("jerry").classList.remove("scuba")
+        document.getElementById("jerry").classList.remove("iron")
+        document.getElementById("jerry").classList.remove("angel")
 
         document.getElementById("jerry").classList.add("glasses-3d")
         document.getElementById("jerry").classList.add("fast-animate")
@@ -711,6 +713,23 @@ function applyUpgrade(upgrade) {
         document.getElementById("jerry").classList.remove("angel")
 
         document.getElementById("jerry").classList.add("scuba")
+      }
+      if (upgrade.id === "pet_item_iron_jerry") {
+        document.getElementById("jerry").classList.remove("glasses-3d")
+        document.getElementById("jerry").classList.remove("fast-animate")
+        document.getElementById("jerry").classList.remove("lord")
+        document.getElementById("jerry").classList.remove("scuba")
+        document.getElementById("jerry").classList.remove("angel")
+
+        document.getElementById("jerry").classList.add("iron")
+      }
+      if (upgrade.id === "pet_item_angel_jerry") {
+        document.getElementById("jerry").classList.remove("glasses-3d")
+        document.getElementById("jerry").classList.remove("fast-animate")
+        document.getElementById("jerry").classList.remove("lord")
+        document.getElementById("jerry").classList.remove("scuba")
+        document.getElementById("jerry").classList.remove("iron")
+        document.getElementById("jerry").classList.add("angel")
       }
       break
   }
