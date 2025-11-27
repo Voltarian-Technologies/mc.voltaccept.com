@@ -1,0 +1,24 @@
+{
+  "items": [
+    { "id": "aspect_of_the_jerry", "name": "Aspect of the Jerry" },
+    { "id": "aspect_of_the_jerry_signature", "name": "Aspect of the Jerry (Signature)" },
+    { "id": "assistant", "name": "Lord Jerry" },
+    { "id": "inflatable_jerry", "name": "Inflatable Jerry" },
+    { "id": "jerry_box_blue", "name": "Jerry Box (Blue)" },
+    { "id": "jerry_box_golden", "name": "Jerry Box (Golden)" },
+    { "id": "jerry_box_green", "name": "Jerry Box (Green)" },
+    { "id": "jerry_box_mega", "name": "Jerry Box (Mega)" },
+    { "id": "jerry_box_purple", "name": "Jerry Box (Purple)" },
+    { "id": "jerry_candy", "name": "Jerry Candy" },
+    { "id": "jerry_rune", "name": "Jerry Rune I" },
+    { "id": "jerry_rune_2", "name": "Jerry Rune II" },
+    { "id": "jerry_rune_3", "name": "Jerry Rune III" },
+    { "id": "jerry_staff", "name": "Jerry Staff" },
+    { "id": "jerry_stone", "name": "Jerry Stone" },
+    { "id": "jerry_talisman_blue", "name": "Jerry Talisman (Blue)" },
+    { "id": "jerry_talisman_golden", "name": "Jerry Talisman (Golden)" },
+    { "id": "jerry_talisman_green", "name": "Jerry Talisman (Green)" },
+    { "id": "jerry_talisman_purple", "name": "Jerry Talisman (Purple)" },
+    { "id": "pet_item_toy_jerry", "name": "Pet Item: Jerry 3D Glasses" }
+  ]
+}

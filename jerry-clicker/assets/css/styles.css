@@ -1,0 +1,467 @@
+@font-face {
+  font-family: "Jerrified Pixels";
+  src: url("../font/JerrifiedPixels.ttf") format("truetype");
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+  font-family: "Jerrified Pixels";;
+  cursor: url("../img/ui/cursors/default.png"), default;
+}
+
+body {
+  background-image: url("../img/ui/backgrounds/stone.png");
+  background-repeat: repeat;
+  background-size: auto 64px;
+  image-rendering: pixelated;
+  color: #f1f1f1;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.game-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+}
+
+.main-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 30px;
+  backdrop-filter: brightness(2);
+  border: 0px solid rgba(255, 255, 255, 0.1);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #ffa726;
+  text-shadow: 0 0 20px rgba(255, 167, 38, 0.5);
+  margin-bottom: 10px;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.stat-box {
+  background: rgba(255, 167, 38, 0.1);
+  padding: 15px 25px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 167, 38, 0.3);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffa726;
+}
+
+.click-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin: 40px 0;
+  /* Added relative positioning for click indicators */
+  position: relative;
+}
+
+#lord-jerry {
+  width: 200px;
+  height: 200px;
+  cursor:  url("../img/ui/cursors/pointer.png"), pointer;
+  transition: transform 0.1s ease;
+  filter: drop-shadow(0 0 30px rgba(255, 167, 38, 0.6));
+  /* Made Lord Jerry non-draggable */
+  user-select: none;
+  -webkit-user-drag: none;
+  background-image: url("../../api/resources/assistant.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#lord-jerry:hover {
+  transform: scale(1.05);
+}
+
+#lord-jerry:active {
+  transform: scale(0.95);
+}
+
+#lord-jerry.fast-animate:active {
+  animation: fastClick 0.05s ease;
+}
+
+/* Added 3D anaglyph effect for Jerry 3D Glasses */
+#lord-jerry.glasses-3d {
+  filter: drop-shadow(0 0 30px rgba(255, 167, 38, 0.6));
+  animation: anaglyph 2s ease-in-out infinite;
+}
+
+@keyframes anaglyph {
+
+  0%,
+  100% {
+    filter: drop-shadow(3px 0 0 rgba(255, 0, 0, 0.8)) drop-shadow(-3px 0 0 rgba(0, 255, 255, 0.8)) drop-shadow(0 0 30px rgba(255, 167, 38, 0.6));
+  }
+
+  50% {
+    filter: drop-shadow(-3px 0 0 rgba(255, 0, 0, 0.8)) drop-shadow(3px 0 0 rgba(0, 255, 255, 0.8)) drop-shadow(0 0 30px rgba(255, 167, 38, 0.6));
+  }
+}
+
+@keyframes fastClick {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.9);
+  }
+}
+
+.click-indicator {
+  position: absolute;
+  color: #ffa726;
+  font-weight: bold;
+  font-size: 1.5rem;
+  pointer-events: none;
+  animation: floatUp 1s ease-out forwards;
+  text-shadow: 0 0 10px rgba(255, 167, 38, 0.8);
+  /* Ensure indicators appear above upgrades panel */
+  z-index: 100;
+}
+
+/* New candy icon animation for click feedback */
+.candy-icon-float {
+  width: 32px;
+  height: 32px;
+  background-image: url("../../api/resources/jerry_candy.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 0 10px rgba(255, 167, 38, 0.8));
+}
+
+@keyframes floatUp {
+  to {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+}
+
+.upgrades-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 20px;
+  backdrop-filter: brightness(2);
+  border: 0px solid rgba(255, 255, 255, 0.1);
+  max-height: 90vh;
+  overflow-y: auto;
+  /* Set lower z-index so click indicators don't get blocked */
+  position: relative;
+  z-index: 1;
+}
+
+.upgrades-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.upgrades-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.upgrades-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 167, 38, 0.5);
+  border-radius: 4px;
+}
+
+.upgrades-panel h2 {
+  color: #ffa726;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.upgrade-item {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: brightness(1.5);
+  border: 0px solid rgba(255, 167, 38, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+  cursor:  url("../img/ui/cursors/pointer.png"), pointer;
+}
+
+.upgrade-item:hover:not(.locked){
+  background: rgba(255, 167, 38, 0.1);
+  border-color: rgba(255, 167, 38, 0.6);
+  transform: translateX(5px);
+}
+
+.upgrade-item.locked {
+  cursor:  url("../img/ui/cursors/not_allowed.png"), not-allowed;
+  border-color: #ff3d3d;
+  background: #ff3d3d2c;
+}
+
+/* Overlay lock image when upgrade is locked */
+.upgrade-item.locked .upgrade-icon::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("../img/ui/locked.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none; /* prevent blocking clicks */
+}
+
+.upgrade-item.owned {
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.upgrade-item.owned:hover:not(.locked){
+  background: rgba(76, 175, 80, 0.2);
+  transform: translateX(5px);
+}
+
+.upgrade-icon {
+  position: relative; /* added */
+  width: 50px;
+  height: 50px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+
+.upgrade-info {
+  flex: 1;
+}
+
+.upgrade-name {
+  font-weight: bold;
+  color: #ffa726;
+  margin-bottom: 5px;
+}
+
+.upgrade-effect {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.upgrade-cost {
+  font-size: 0.9rem;
+  color: #4caf50;
+}
+
+.upgrade-owned {
+  font-size: 0.9rem;
+  color: #4caf50;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+button {
+  background-image: url("../img/ui/button.png");
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  image-rendering: pixelated;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 0;
+  cursor:  url("../img/ui/cursors/pointer.png"), pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 0px #2d2d2d;
+  transform: translateY(-2px);
+}
+
+button:hover {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0px #2d2d2d;
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button.prestige-btn {
+  background-image: url("../img/ui/button_prestige.png");
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  image-rendering: pixelated;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 0;
+  cursor:  url("../img/ui/cursors/pointer.png"), pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 0px #2d2d2d;
+  transform: translateY(-2px);
+}
+
+button.prestige-btn:hover {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0px #2d2d2d;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor:  url("../img/ui/cursors/not_allowed.png"), not-allowed;
+  transform: translateY(2px);
+  box-shadow: 0 0px 0px #2d2d2d;
+}
+
+.prestige-info {
+  text-align: center;
+  padding: 20px;
+  background: rgba(156, 39, 176, 0.1);
+  border: 2px solid rgba(156, 39, 176, 0.3);
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.prestige-multiplier {
+  font-size: 1.5rem;
+  color: #ce93d8;
+  font-weight: bold;
+}
+
+@media (max-width: 1024px) {
+  .game-container {
+    grid-template-columns: 1fr;
+  }
+
+  .upgrades-panel {
+    max-height: none;
+  }
+}
+
+/* Popup overlay */
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(26, 26, 46, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.popup.hidden {
+  display: none;
+}
+
+/* Popup box */
+.popup-content {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid #ffa726;
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(255, 167, 38, 0.6);
+  backdrop-filter: blur(8px);
+  animation: popupFade 0.3s ease;
+}
+
+@keyframes popupFade {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.popup-message {
+  font-size: 1.2rem;
+  color: #ffa726;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(255, 167, 38, 0.6);
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.popup-buttons button {
+  background-image: url("../img/ui/button_ok.png");
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  image-rendering: pixelated;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 0;
+  cursor:  url("../img/ui/cursors/pointer.png"), pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 0px #2d2d2d;
+  transform: translateY(-2px);
+}
+
+.popup-buttons button:hover {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0px #2d2d2d;
+}
+
+.popup-buttons button:active {
+  transform: translateY(0);
+}
+
+.popup-buttons #popup-cancel {
+  background-image: url("../img/ui/button_cancel.png");
+}

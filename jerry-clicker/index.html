@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jerry Clicker</title>
+    <link rel="icon" href="./api/resources/jerry_candy.png" type="image/png">
+    <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="main-panel">
+            <div class="header">
+                <h1>Jerry Clicker</h1>
+            </div>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">Jerry Candies</div>
+                    <div class="stat-value" id="candies">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Per Click</div>
+                    <div class="stat-value" id="per-click">1</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Per Second</div>
+                    <div class="stat-value" id="per-second">0</div>
+                </div>
+            </div>
+
+            <div class="click-area">
+                <!-- Changed to use background-image via CSS -->
+                <div id="lord-jerry"></div>
+            </div>
+
+            <div class="prestige-info" id="prestige-info" style="display: none;">
+                <div class="stat-label">Prestige Multiplier</div>
+                <div class="prestige-multiplier" id="prestige-mult">×1</div>
+            </div>
+
+            <div class="controls">
+                <button onclick="loadGame()">Import Save</button>
+                <button onclick="exportSave()">Export Save</button>
+                <button class="prestige-btn" id="prestige-btn" onclick="prestige()" disabled>Prestige</button>
+            </div>
+        </div>
+
+        <div class="upgrades-panel">
+            <h2>Upgrades</h2>
+            <div id="upgrades-list"></div>
+        </div>
+    </div>
+
+    <div id="popup" class="popup hidden">
+        <div class="popup-content">
+            <div class="popup-message" id="popup-message"></div>
+            <div class="popup-buttons">
+                <button id="popup-ok">OK</button>
+                <button id="popup-cancel" class="hidden">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./assets/js/script.js"></script>
+</body>
+
+</html>
