@@ -133,7 +133,7 @@ var upgrades = [
     name: "Jerry Stone",
     cost: 50000,
     effect: "+100 candies per click",
-    type: "clicks",
+    type: "click",
     value: 100,
     upgrade: true
   },
