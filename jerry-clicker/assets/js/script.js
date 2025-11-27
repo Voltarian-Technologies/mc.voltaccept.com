@@ -777,9 +777,8 @@ function formatNumber(num) {
   if (!isFinite(num)) return "Infinity"
 
   const suffixes = [
-    "", "K", "M", "B", "T",
-    "Quadrillion", "Quintillion", "Sextillion", "Septillion",
-    "Octillion", "Nonillion", "Decillion",
+    "", "K", "M", "B", "T", "Quadrillion", "Quintillion", "Sextillion", "Septillion", "Octillion", "Nonillion",
+    "Decillion", "Undecillion", "Duodecillion", "Tredecillion", "Quattuordecillion", "Quindecillion",
     "Googol", "Googolplex"
   ]
 
