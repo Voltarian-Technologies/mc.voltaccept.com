@@ -182,6 +182,24 @@ var upgrades = [
     value: 1,
     upgrade: true
   },
+  {
+    id: "pet_item_angel_jerry",
+    name: "Pet Item: Holy Halo",
+    cost: 5000000,
+    effect: "Converts Jerry into Angel Jerry",
+    type: "cosmetic",
+    value: 1,
+    upgrade: true
+  },
+  {
+    id: "pet_item_iron_jerry",
+    name: "Pet Item: Iron Totem",
+    cost: 5000000,
+    effect: "Converts Jerry into Iron Jerry",
+    type: "cosmetic",
+    value: 1,
+    upgrade: true
+  },
 ]
 
 /* -------------------------
@@ -680,6 +698,8 @@ function applyUpgrade(upgrade) {
         document.getElementById("jerry").classList.remove("glasses-3d")
         document.getElementById("jerry").classList.remove("fast-animate")
         document.getElementById("jerry").classList.remove("scuba")
+        document.getElementById("jerry").classList.remove("iron")
+        document.getElementById("jerry").classList.remove("angel")
 
         document.getElementById("jerry").classList.add("lord")
       }
@@ -687,6 +707,8 @@ function applyUpgrade(upgrade) {
         document.getElementById("jerry").classList.remove("glasses-3d")
         document.getElementById("jerry").classList.remove("fast-animate")
         document.getElementById("jerry").classList.remove("lord")
+        document.getElementById("jerry").classList.remove("iron")
+        document.getElementById("jerry").classList.remove("angel")
 
         document.getElementById("jerry").classList.add("scuba")
       }

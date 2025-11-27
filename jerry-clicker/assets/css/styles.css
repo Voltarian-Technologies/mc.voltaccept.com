@@ -131,6 +131,16 @@ h1 {
   background-image: url("../img/cosmetics/lord_jerry.png");
 }
 
+#jerry.iron {
+  filter: drop-shadow(0 0 30px rgba(255, 167, 38, 0.6)) drop-shadow(0 0 10px rgba(0, 150, 255, 0.7));
+  background-image: url("../img/cosmetics/iron_jerry.png");
+}
+
+#jerry.angel {
+  filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.8));
+  background-image: url("../img/cosmetics/angel_jerry.png");
+}
+
 @keyframes anaglyph {
 
   0%,
