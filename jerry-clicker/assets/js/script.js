@@ -1,6 +1,6 @@
 // Game state
 let gameState = {
-  candies: 1000000000000000,
+  candies: 0,
   perClick: 1,
   autoRate: 0,
   upgrades: {},
