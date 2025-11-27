@@ -1,6 +1,6 @@
 // Game state
 let gameState = {
-  candies: 0,
+  candies: 150000000,
   perClick: 1,
   autoRate: 0,
   upgrades: {},
@@ -159,7 +159,25 @@ var upgrades = [
     id: "pet_item_toy_jerry",
     name: "Pet Item: Jerry 3D Glasses",
     cost: 5000000,
-    effect: "Adds trippy 3D anaglyph effect to Lord Jerry",
+    effect: "Adds trippy 3D anaglyph effect to Jerry",
+    type: "cosmetic",
+    value: 1,
+    upgrade: true
+  },
+  {
+    id: "pet_item_lord_jerry",
+    name: "Pet Item: Lord's Crown",
+    cost: 5000000,
+    effect: "Converts Jerry into Lord Jerry",
+    type: "cosmetic",
+    value: 1,
+    upgrade: true
+  },
+  {
+    id: "pet_item_scuba_jerry",
+    name: "Pet Item: Scuba Mask",
+    cost: 5000000,
+    effect: "Converts Jerry into Scuba Jerry",
     type: "cosmetic",
     value: 1,
     upgrade: true
@@ -199,14 +217,17 @@ function deepProxy(target, options = {}, path = "") {
 
   const handler = {
     get(t, prop, receiver) {
-      // Keep special internals accessible
       if (prop === "__isProxy") return true;
       if (prop === "__raw") return t;
 
+      if (prop === "prototype") {
+        return Reflect.get(t, prop, receiver);
+      }
+
       const val = Reflect.get(t, prop, receiver);
-      // Lazily proxy child objects (and cache them)
       return isObject(val) ? deepProxy(val, options, `${path}.${String(prop)}`) : val;
     },
+
 
     set(t, prop, value, receiver) {
       const oldVal = t[prop];
@@ -395,11 +416,11 @@ function applyPendingWraps() {
 });
 
 /* -------------------------
-  Safe event wrapper for Lord Jerry click (ensure internal suppression)
+  Safe event wrapper for Jerry click (ensure internal suppression)
   We'll rebind the click to a wrapper that runs internal code while preserving original logic.
 -------------------------*/
 (function safeBindLordJerryClick() {
-  const el = document.getElementById("lord-jerry");
+  const el = document.getElementById("jerry");
   if (!el) return;
 
   // Capture any existing handlers attached via addEventListener is tricky;
@@ -490,8 +511,8 @@ function loadFromLocalStorage() {
 
       // Re-apply cosmetic effects
       if (gameState.upgrades["pet_item_toy_jerry"].count > 0) {
-        document.getElementById("lord-jerry").classList.add("glasses-3d")
-        document.getElementById("lord-jerry").classList.add("fast-animate")
+        document.getElementById("jerry").classList.add("glasses-3d")
+        document.getElementById("jerry").classList.add("fast-animate")
       }
 
       // Show prestige info if unlocked
@@ -520,6 +541,16 @@ function saveToLocalStorage() {
   }
 }
 
+function getActiveCosmetic() {
+  const cosmeticIds = upgrades.filter(u => u.type === "cosmetic").map(u => u.id);
+  for (const id of cosmeticIds) {
+    if (gameState.upgrades[id]?.count > 0) {
+      return id;
+    }
+  }
+  return null;
+}
+
 function renderUpgrades() {
   const list = document.getElementById("upgrades-list")
   list.innerHTML = ""
@@ -529,8 +560,6 @@ function renderUpgrades() {
     const owned = state?.count || 0
     const cost = state?.currentCost || upgrade.cost
     const canAfford = gameState.candies >= cost
-
-    // 🔑 Detect upgrades flagged as single-purchase
     const isSinglePurchase = upgrade.upgrade === true && owned >= 1
 
     const lockedClass = (!canAfford || isSinglePurchase) ? "locked" : ""
@@ -576,24 +605,44 @@ function updateUpgradeLocks() {
 }
 
 function buyUpgrade(id) {
-  const upgrade = upgrades.find((u) => u.id === id)
-  const state = gameState.upgrades[id]
+  const upgrade = upgrades.find((u) => u.id === id);
+  const state = gameState.upgrades[id];
 
-  // Block multiple purchases for upgrades
+  // Block multiple purchases for single-purchase upgrades
   if ((upgrade.upgrade === true) && state.count >= 1) {
-    return
+    return;
   }
 
   if (gameState.candies >= state.currentCost) {
-    gameState.candies -= state.currentCost
-    state.count++
-    state.currentCost = state.currentCost * 1.15
+    // Cosmetic swap logic
+    if (upgrade.type === "cosmetic") {
+      const activeCosmetic = getActiveCosmetic();
+      if (activeCosmetic && activeCosmetic !== id) {
+        const oldUpgrade = upgrades.find(u => u.id === activeCosmetic);
+        const oldState = gameState.upgrades[activeCosmetic];
 
-    applyUpgrade(upgrade)
-    initUI()
+        // Refund half the old cost
+        const refund = Math.floor(oldState.currentCost / 2);
+        gameState.candies += refund;
+
+        // Reset old cosmetic
+        oldState.count = 0;
+        oldState.currentCost = oldUpgrade.cost;
+
+        // Remove old cosmetic classes
+        document.getElementById("jerry").classList.remove("glasses-3d", "fast-animate", "lord", "scuba");
+      }
+    }
+
+    // Deduct cost and apply new upgrade
+    gameState.candies -= state.currentCost;
+    state.count++;
+    state.currentCost = state.currentCost * 1.15;
+
+    applyUpgrade(upgrade);
+    initUI();
   }
 }
-
 
 function applyUpgrade(upgrade) {
   const mult = gameState.prestigeMultiplier
@@ -620,14 +669,33 @@ function applyUpgrade(upgrade) {
       // Applied during prestige
       break
     case "cosmetic":
-      document.getElementById("lord-jerry").classList.add("glasses-3d")
-      document.getElementById("lord-jerry").classList.add("fast-animate")
+      if (upgrade.id === "pet_item_toy_jerry") {
+        document.getElementById("jerry").classList.remove("lord")
+        document.getElementById("jerry").classList.remove("scuba")
+
+        document.getElementById("jerry").classList.add("glasses-3d")
+        document.getElementById("jerry").classList.add("fast-animate")
+      }
+      if (upgrade.id === "pet_item_lord_jerry") {
+        document.getElementById("jerry").classList.remove("glasses-3d")
+        document.getElementById("jerry").classList.remove("fast-animate")
+        document.getElementById("jerry").classList.remove("scuba")
+
+        document.getElementById("jerry").classList.add("lord")
+      }
+      if (upgrade.id === "pet_item_scuba_jerry") {
+        document.getElementById("jerry").classList.remove("glasses-3d")
+        document.getElementById("jerry").classList.remove("fast-animate")
+        document.getElementById("jerry").classList.remove("lord")
+
+        document.getElementById("jerry").classList.add("scuba")
+      }
       break
   }
 }
 
-// Click Lord Jerry
-document.getElementById("lord-jerry").addEventListener("click", (e) => {
+// Click Jerry
+document.getElementById("jerry").addEventListener("click", (e) => {
   // Ensure the click handler runs with suppression active to avoid false positives
   runInternal(() => {
     const gain = Math.floor(gameState.perClick)
@@ -726,7 +794,7 @@ function prestige() {
           const keepAspect = gameState.upgrades["aspect_of_the_jerry"].count;
           const keepSignature = gameState.upgrades["aspect_of_the_jerry_signature"].count;
 
-          const lord = document.getElementById("lord-jerry");
+          const lord = document.getElementById("jerry");
           lord.classList.remove("glasses-3d");
           lord.classList.remove("fast-animate");
 
@@ -811,8 +879,8 @@ function loadGame() {
         });
 
         if (gameState.upgrades["pet_item_toy_jerry"].count > 0) {
-          document.getElementById("lord-jerry").classList.add("glasses-3d");
-          document.getElementById("lord-jerry").classList.add("fast-animate");
+          document.getElementById("jerry").classList.add("glasses-3d");
+          document.getElementById("jerry").classList.add("fast-animate");
         }
 
         if (gameState.upgrades["aspect_of_the_jerry"].count > 0) {

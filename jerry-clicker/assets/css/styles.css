@@ -88,37 +88,47 @@ h1 {
   position: relative;
 }
 
-#lord-jerry {
+#jerry {
   width: 200px;
   height: 200px;
   cursor:  url("../img/ui/cursors/pointer.png"), pointer;
   transition: transform 0.1s ease;
   filter: drop-shadow(0 0 30px rgba(255, 167, 38, 0.6));
-  /* Made Lord Jerry non-draggable */
+  /* Made Jerry non-draggable */
   user-select: none;
   -webkit-user-drag: none;
-  background-image: url("../../api/resources/assistant.png");
+  background-image: url("../img/cosmetics/jerry.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
 }
 
-#lord-jerry:hover {
+#jerry:hover {
   transform: scale(1.05);
 }
 
-#lord-jerry:active {
+#jerry:active {
   transform: scale(0.95);
 }
 
-#lord-jerry.fast-animate:active {
+#jerry.fast-animate:active {
   animation: fastClick 0.05s ease;
 }
 
 /* Added 3D anaglyph effect for Jerry 3D Glasses */
-#lord-jerry.glasses-3d {
+#jerry.glasses-3d {
   filter: drop-shadow(0 0 30px rgba(255, 167, 38, 0.6));
   animation: anaglyph 2s ease-in-out infinite;
+}
+
+#jerry.scuba {
+  filter: drop-shadow(0 0 30px rgba(255, 167, 38, 0.6)) drop-shadow(0 0 10px rgba(0, 150, 255, 0.7));
+  background-image: url("../img/cosmetics/scuba_jerry.png");
+}
+
+#jerry.lord {
+  filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.8));
+  background-image: url("../img/cosmetics/lord_jerry.png");
 }
 
 @keyframes anaglyph {
