@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>GTA 5 Mini - Enhanced Edition with Weapon Rarities & Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+
+        canvas {
+            display: block
+        }
+
+        #ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10
+        }
+
+        #prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #ff0;
+            border-radius: 15px;
+            font-size: 1.5em;
+            display: none;
+            text-align: center;
+        }
+
+        #hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        #wanted {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%)
+        }
+
+        .star {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin: 0 5px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 65,35 100,40 75,65 80,100 50,80 20,100 25,65 0,40 35,35" fill="%23ff0"/></svg>') center/contain no-repeat;
+            opacity: 0.2
+        }
+
+        .star.active {
+            opacity: 1;
+            animation: pulse 1s infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.3)
+            }
+        }
+
+        #radio {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #radio-icon {
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #health-bar,
+        #armor-bar {
+            position: absolute;
+            right: 20px;
+            width: 220px;
+            height: 22px;
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 11px;
+            overflow: hidden
+        }
+
+        #health-bar {
+            bottom: 80px;
+            border-color: #f00
+        }
+
+        #armor-bar {
+            bottom: 110px;
+            border-color: #88f
+        }
+
+        #health,
+        #armor {
+            height: 100%;
+            width: 100%;
+            background: #0f0;
+            transition: width .1s linear
+        }
+
+        #armor {
+            background: #88f
+        }
+
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 220px;
+            height: 220px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid #fff;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #minimap-canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated
+        }
+
+        #controls-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+        }
+
+        #msg-log {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            max-width: 300px;
+        }
+
+        .msg {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            animation: fadeOut 3s forwards;
+            font-family: 'Courier New', monospace;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        #crosshair::before {
+            width: 2px;
+            height: 20px;
+            top: 0;
+            left: 9px;
+        }
+
+        #crosshair::after {
+            width: 20px;
+            height: 2px;
+            top: 9px;
+            left: 0;
+        }
+
+        #weapon-hud {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.2em;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .rarity-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        /* Console Styles */
+        #console {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            display: none;
+            z-index: 100;
+            pointer-events: auto;
+            border-top: 2px solid #0f0;
+        }
+
+        #console-output {
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+
+        #console-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-top: 1px solid #0f0;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 10px;
+            outline: none;
+        }
+
+        .console-line {
+            margin-bottom: 5px;
+        }
+
+        .console-prompt {
+            color: #0ff;
+        }
+
+        .console-error {
+            color: #f00;
+        }
+
+        .console-success {
+            color: #0f0;
+        }
+
+        .console-warning {
+            color: #ff0;
+        }
+
+        /* Rarity Colors */
+        .common { color: #888888; }
+        .uncommon { color: #00ff00; }
+        .rare { color: #0088ff; }
+        .epic { color: #ff00ff; }
+        .legendary { color: #ff8800; }
+        .exotic { color: #ffd700; } /* Destiny 2 exotic yellow */
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        <div id="controls-hint">
+            WASD: Move/Drive<br>
+            SHIFT: Sprint/Accelerate<br>
+            SPACE: Jump/Brake<br>
+            CLICK: Shoot<br>
+            1/2/3/4: Weapons<br>
+            E: Enter/Exit Car<br>
+            F: Radio<br>
+            R: Reload<br>
+            `/~: Console
+        </div>
+        <div id="crosshair"></div>
+        <div id="prompt">Press E to enter/exit vehicle</div>
+        <div id="wanted"></div>
+        <div id="msg-log"></div>
+        <div id="hud">
+            <div style="font-size: 1.2em; margin-bottom: 5px;">WEAPON: <span id="weapon-name"
+                    style="color:#ff0">Fists</span></div>
+            <div style="font-size: 1.2em;">AMMO: <span id="ammo" style="color:#ff0">∞</span></div>
+        </div>
+        <div id="weapon-hud">
+            <span id="current-weapon">Fists</span> 
+            <span id="weapon-rarity" class="common"></span>
+            <div id="rarity-dot" class="rarity-dot" style="background-color: #888888;"></div>
+            | <span id="ammo-count">∞</span>
+        </div>
+        <div id="radio">
+            <div id="radio-icon"></div>
+            <div>RADIO: <span id="station">OFF</span></div>
+        </div>
+        <div id="health-bar">
+            <div id="health" style="width: 100%;"></div>
+        </div>
+        <div id="armor-bar">
+            <div id="armor" style="width: 50%;"></div>
+        </div>
+        <div id="minimap"><canvas id="minimap-canvas" width="220" height="220"></canvas></div>
+    </div>
+    
+    <!-- Console Terminal -->
+    <div id="console">
+        <div id="console-output"></div>
+        <input type="text" id="console-input" placeholder="Type commands here...">
+    </div>
+    
+    <canvas id="game-canvas"></canvas>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.181.2/build/three.module.min.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181.2/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+
+        const WORLD_SIZE = 2000;
+        const GRAVITY = -30;
+        const PLAYER_SPEED = 8, SPRINT_SPEED = 14, JUMP = 12;
+        const MOUSE_SENSITIVITY = 0.002;
+
+        // Weapon Rarities
+        const RARITIES = {
+            COMMON: { 
+                name: "COMMON", 
+                color: 0x888888,
+                damageMultiplier: 1.0,
+                fireRateMultiplier: 1.0,
+                ammoMultiplier: 1.0,
+                spreadMultiplier: 1.0
+            },
+            UNCOMMON: { 
+                name: "UNCOMMON", 
+                color: 0x00ff00,
+                damageMultiplier: 1.2,
+                fireRateMultiplier: 0.9,
+                ammoMultiplier: 1.2,
+                spreadMultiplier: 0.9
+            },
+            RARE: { 
+                name: "RARE", 
+                color: 0x0088ff,
+                damageMultiplier: 1.5,
+                fireRateMultiplier: 0.85,
+                ammoMultiplier: 1.5,
+                spreadMultiplier: 0.85
+            },
+            EPIC: { 
+                name: "EPIC", 
+                color: 0xff00ff,
+                damageMultiplier: 1.8,
+                fireRateMultiplier: 0.8,
+                ammoMultiplier: 1.8,
+                spreadMultiplier: 0.8
+            },
+            LEGENDARY: { 
+                name: "LEGENDARY", 
+                color: 0xff8800,
+                damageMultiplier: 2.2,
+                fireRateMultiplier: 0.75,
+                ammoMultiplier: 2.2,
+                spreadMultiplier: 0.75
+            },
+            EXOTIC: { 
+                name: "EXOTIC", 
+                color: 0xffd700, // Destiny 2 exotic yellow
+                damageMultiplier: 3.0,
+                fireRateMultiplier: 0.7,
+                ammoMultiplier: 3.0,
+                spreadMultiplier: 0.7,
+                specialEffect: true
+            }
+        };
+
+        // Base weapons without rarity modifiers
+        const BASE_WEAPONS = {
+            Fists: { 
+                name: "Fists", 
+                baseAmmo: 0, 
+                baseMax: 0, 
+                baseReserve: 0, 
+                baseFireRate: 0.5, 
+                baseDamage: 5, 
+                baseRecoil: 0, 
+                baseRange: 2,
+                baseSpread: 0
+            },
+            Pistol: { 
+                name: "Pistol", 
+                baseAmmo: 12, 
+                baseMax: 12, 
+                baseReserve: 48, 
+                baseFireRate: 0.3, 
+                baseDamage: 20, 
+                baseRecoil: 0.1, 
+                baseRange: 100,
+                baseSpread: 0.03
+            },
+            Shotgun: { 
+                name: "Shotgun", 
+                baseAmmo: 6, 
+                baseMax: 6, 
+                baseReserve: 24, 
+                baseFireRate: 1.0, 
+                baseDamage: 12, 
+                pellets: 8, 
+                baseSpread: 0.15, 
+                baseRecoil: 0.3, 
+                baseRange: 40,
+                baseSpread: 0.15
+            },
+            Rifle: { 
+                name: "Carbine", 
+                baseAmmo: 20, 
+                baseMax: 20, 
+                baseReserve: 80, 
+                baseFireRate: 0.12, 
+                baseDamage: 15, 
+                baseRecoil: 0.15, 
+                baseRange: 200,
+                baseSpread: 0.04
+            }
+        };
+
+        // Procedural Music Synthesizer
+        class SynthRadio {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.isPlaying = false;
+                this.stations = [
+                    { name: "OFF", style: null },
+                    { name: "Los Santos Rock", style: "rock" },
+                    { name: "Neon FM", style: "synth" },
+                    { name: "Rebel Radio", style: "country" }
+                ];
+                this.currentStation = 0;
+                this.nextNoteTime = 0;
+                this.tempo = 120;
+                this.timerID = null;
+            }
+
+            toggle() {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                this.currentStation = (this.currentStation + 1) % this.stations.length;
+                const station = this.stations[this.currentStation];
+
+                if (this.currentStation === 0) {
+                    this.stop();
+                } else {
+                    if (!this.isPlaying) this.play();
+                    if (station.style === "rock") this.tempo = 110;
+                    if (station.style === "synth") this.tempo = 135;
+                    if (station.style === "country") this.tempo = 90;
+                }
+                return station.name;
+            }
+
+            play() {
+                this.isPlaying = true;
+                this.nextNoteTime = this.ctx.currentTime;
+                this.schedule();
+            }
+
+            stop() {
+                this.isPlaying = false;
+                clearTimeout(this.timerID);
+            }
+
+            schedule() {
+                if (!this.isPlaying) return;
+                const secondsPerBeat = 60.0 / this.tempo;
+                while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
+                    this.playBeat(this.nextNoteTime);
+                    this.nextNoteTime += secondsPerBeat;
+                }
+                this.timerID = setTimeout(() => this.schedule(), 25);
+            }
+
+            playBeat(time) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const style = this.stations[this.currentStation].style;
+
+                osc.frequency.setValueAtTime(150, time);
+                osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+                gain.gain.setValueAtTime(0.5, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+                osc.start(time);
+                osc.stop(time + 0.5);
+
+                if (Math.random() > 0.3) {
+                    const hOsc = this.ctx.createOscillator();
+                    const hGain = this.ctx.createGain();
+                    hOsc.type = 'square';
+                    hOsc.connect(hGain);
+                    hGain.connect(this.ctx.destination);
+                    hOsc.frequency.setValueAtTime(style === "synth" ? 800 : 400, time + 0.25);
+                    hGain.gain.setValueAtTime(0.1, time + 0.25);
+                    hGain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+                    hOsc.start(time + 0.25);
+                    hOsc.stop(time + 0.3);
+                }
+
+                if (Math.random() > 0.5) {
+                    const mOsc = this.ctx.createOscillator();
+                    const mGain = this.ctx.createGain();
+                    mOsc.type = style === "rock" ? 'sawtooth' : 'sine';
+                    mOsc.connect(mGain);
+                    mGain.connect(this.ctx.destination);
+                    const freq = [220, 261, 329, 392, 440][Math.floor(Math.random() * 5)];
+                    mOsc.frequency.setValueAtTime(freq / (style === "synth" ? 1 : 2), time);
+                    mGain.gain.setValueAtTime(0.1, time);
+                    mGain.gain.linearRampToValueAtTime(0, time + 0.4);
+                    mOsc.start(time);
+                    mOsc.stop(time + 0.5);
+                }
+            }
+        }
+
+        // ==================== BULLET PHYSICS ====================
+
+        class Bullet {
+            constructor(scene, origin, direction, damage, weaponType, rarity, isShotgunPellet = false) {
+                this.scene = scene;
+                this.damage = damage;
+                this.weaponType = weaponType;
+                this.rarity = rarity;
+                this.isShotgunPellet = isShotgunPellet;
+                this.lifetime = isShotgunPellet ? 1.0 : 2.0;
+                this.velocity = isShotgunPellet ? 150 : 200;
+                this.position = origin.clone();
+                this.direction = direction.clone().normalize();
+                this.alive = true;
+                this.raycaster = new THREE.Raycaster(origin, direction);
+                this.raycaster.far = 300;
+                this.hasHit = false;
+
+                // Create bullet mesh with rarity color
+                const bulletColor = RARITIES[rarity]?.color || 0xffff00;
+                const geometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
+                geometry.rotateX(Math.PI / 2);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: bulletColor
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.copy(origin);
+                this.mesh.lookAt(origin.clone().add(direction));
+                scene.add(this.mesh);
+
+                // Add bullet trail with rarity color
+                this.trail = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([origin.clone(), origin.clone()]),
+                    new THREE.LineBasicMaterial({ 
+                        color: bulletColor, 
+                        transparent: true, 
+                        opacity: 0.5 
+                    })
+                );
+                scene.add(this.trail);
+            }
+
+            update(dt, game) {
+                if (!this.alive || this.hasHit) return false;
+
+                this.lifetime -= dt;
+                if (this.lifetime <= 0) {
+                    this.remove();
+                    return false;
+                }
+
+                const oldPosition = this.position.clone();
+                this.position.addScaledVector(this.direction, this.velocity * dt);
+                this.mesh.position.copy(this.position);
+
+                // Update trail
+                const trailPoints = [oldPosition, this.position];
+                this.trail.geometry.setFromPoints(trailPoints);
+
+                // Update raycaster
+                this.raycaster.set(oldPosition, this.direction);
+
+                // Check for hits with buildings
+                for (const building of game.buildings) {
+                    const intersection = this.raycaster.intersectObject(building.mesh);
+                    if (intersection.length > 0 && intersection[0].distance < this.velocity * dt) {
+                        this.hit(intersection[0].point, intersection[0].face.normal);
+                        return true;
+                    }
+                }
+
+                // Check for hits with NPCs
+                for (const npc of game.npcs) {
+                    if (!npc.alive) continue;
+                    const intersection = this.raycaster.intersectObject(npc.mesh);
+                    if (intersection.length > 0 && intersection[0].distance < this.velocity * dt) {
+                        npc.takeDamage(this.damage, game);
+                        this.hit(intersection[0].point, intersection[0].face.normal);
+                        return true;
+                    }
+                }
+
+                // Check for hits with player
+                if (game.player && game.player.health > 0) {
+                    const intersection = this.raycaster.intersectObject(game.player.mesh);
+                    if (intersection.length > 0 && intersection[0].distance < this.velocity * dt) {
+                        game.player.takeDamage(this.damage);
+                        this.hit(intersection[0].point, intersection[0].face.normal);
+                        return true;
+                    }
+                }
+
+                // Check for hits with vehicles
+                for (const vehicle of game.vehicles) {
+                    const intersection = this.raycaster.intersectObject(vehicle.mesh);
+                    if (intersection.length > 0 && intersection[0].distance < this.velocity * dt) {
+                        this.hit(intersection[0].point, intersection[0].face.normal, 0xaaaaaa);
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            hit(position, normal, color = 0x888888) {
+                this.hasHit = true;
+                this.createImpactEffect(position, normal, color);
+                this.remove();
+            }
+
+            createImpactEffect(position, normal, color = 0x888888) {
+                // Create impact particles
+                const particleCount = this.isShotgunPellet ? 5 : 10;
+                const particleGeometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+
+                for (let i = 0; i < particleCount; i++) {
+                    const idx = i * 3;
+                    positions[idx] = position.x + (Math.random() - 0.5) * 0.3;
+                    positions[idx + 1] = position.y + (Math.random() - 0.5) * 0.3;
+                    positions[idx + 2] = position.z + (Math.random() - 0.5) * 0.3;
+
+                    const col = new THREE.Color(color);
+                    colors[idx] = col.r;
+                    colors[idx + 1] = col.g;
+                    colors[idx + 2] = col.b;
+                }
+
+                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const particleMaterial = new THREE.PointsMaterial({
+                    size: 0.08,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                const particles = new THREE.Points(particleGeometry, particleMaterial);
+                this.scene.add(particles);
+
+                setTimeout(() => {
+                    this.scene.remove(particles);
+                }, 1000);
+            }
+
+            remove() {
+                this.alive = false;
+                this.scene.remove(this.mesh);
+                this.scene.remove(this.trail);
+            }
+        }
+
+        // ==================== CONSOLE SYSTEM ====================
+
+        class GameConsole {
+            constructor(game) {
+                this.game = game;
+                this.history = [];
+                this.historyIndex = -1;
+                this.isOpen = false;
+                
+                // Console elements
+                this.consoleElement = document.getElementById('console');
+                this.outputElement = document.getElementById('console-output');
+                this.inputElement = document.getElementById('console-input');
+                
+                // Setup event listeners
+                this.setupConsole();
+                
+                // Add welcome message
+                this.print("GTA 5 Mini - Console v1.0");
+                this.print("Type 'help' for available commands");
+            }
+
+            setupConsole() {
+                // Toggle console with ` or ~
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === '`' || e.key === '~') {
+                        e.preventDefault();
+                        this.toggle();
+                    }
+                    
+                    // Handle console-specific keys
+                    if (this.isOpen) {
+                        if (e.key === 'Escape') {
+                            this.toggle();
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            this.navigateHistory(-1);
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            this.navigateHistory(1);
+                        } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.executeCommand(this.inputElement.value);
+                        }
+                    }
+                });
+
+                // Focus input when console is opened
+                this.inputElement.addEventListener('focus', () => {
+                    document.activeElement.blur();
+                    setTimeout(() => this.inputElement.focus(), 10);
+                });
+            }
+
+            toggle() {
+                this.isOpen = !this.isOpen;
+                this.consoleElement.style.display = this.isOpen ? 'block' : 'none';
+                
+                if (this.isOpen) {
+                    this.inputElement.focus();
+                    this.print("> Console opened");
+                } else {
+                    this.print("> Console closed");
+                }
+            }
+
+            print(message, type = "normal") {
+                const line = document.createElement('div');
+                line.className = `console-line ${type}`;
+                
+                // Add timestamp
+                const now = new Date();
+                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                
+                if (type === "normal") {
+                    line.innerHTML = `<span class="console-prompt">[${timeStr}]</span> ${message}`;
+                } else {
+                    line.innerHTML = `<span class="console-prompt">[${timeStr}]</span> <span class="${type}">${message}</span>`;
+                }
+                
+                this.outputElement.appendChild(line);
+                this.outputElement.scrollTop = this.outputElement.scrollHeight;
+            }
+
+            executeCommand(command) {
+                if (!command.trim()) return;
+                
+                // Add to history
+                this.history.push(command);
+                this.historyIndex = this.history.length;
+                
+                // Display command
+                this.print(`> ${command}`, "console-prompt");
+                
+                // Parse and execute command
+                const parts = command.trim().toLowerCase().split(' ');
+                const cmd = parts[0];
+                const args = parts.slice(1);
+                
+                switch(cmd) {
+                    case 'help':
+                        this.showHelp();
+                        break;
+                    case 'player.addgun':
+                        this.addGun(args);
+                        break;
+                    case 'player.giveammo':
+                        this.giveAmmo(args);
+                        break;
+                    case 'player.health':
+                        this.setHealth(args);
+                        break;
+                    case 'player.armor':
+                        this.setArmor(args);
+                        break;
+                    case 'player.godmode':
+                        this.toggleGodMode();
+                        break;
+                    case 'spawn.cop':
+                        this.spawnCop(args);
+                        break;
+                    case 'spawn.vehicle':
+                        this.spawnVehicle(args);
+                        break;
+                    case 'clear':
+                        this.clearConsole();
+                        break;
+                    case 'wanted':
+                        this.setWanted(args);
+                        break;
+                    case 'list.weapons':
+                        this.listWeapons();
+                        break;
+                    case 'list.rarities':
+                        this.listRarities();
+                        break;
+                    default:
+                        this.print(`Unknown command: ${cmd}`, "console-error");
+                }
+                
+                // Clear input
+                this.inputElement.value = '';
+            }
+
+            navigateHistory(direction) {
+                if (this.history.length === 0) return;
+                
+                this.historyIndex = Math.max(0, Math.min(this.history.length - 1, this.historyIndex + direction));
+                if (this.historyIndex >= 0 && this.historyIndex < this.history.length) {
+                    this.inputElement.value = this.history[this.historyIndex];
+                }
+            }
+
+            showHelp() {
+                this.print("Available commands:", "console-success");
+                this.print("  help - Show this help message");
+                this.print("  player.addgun <weapon> <rarity> - Add/upgrade a weapon");
+                this.print("  player.giveammo <amount> - Give ammo to current weapon");
+                this.print("  player.health <amount> - Set player health");
+                this.print("  player.armor <amount> - Set player armor");
+                this.print("  player.godmode - Toggle god mode");
+                this.print("  spawn.cop <count> - Spawn police officers");
+                this.print("  spawn.vehicle - Spawn a random vehicle");
+                this.print("  wanted <level> - Set wanted level (0-5)");
+                this.print("  list.weapons - List available weapons");
+                this.print("  list.rarities - List rarity levels");
+                this.print("  clear - Clear console");
+            }
+
+            addGun(args) {
+                if (args.length < 1) {
+                    this.print("Usage: player.addgun <weapon> [rarity]", "console-error");
+                    this.print("Weapons: pistol, shotgun, rifle", "console-warning");
+                    this.print("Rarities: common, uncommon, rare, epic, legendary, exotic", "console-warning");
+                    return;
+                }
+                
+                const weaponName = args[0].toUpperCase();
+                const rarityName = args.length > 1 ? args[1].toUpperCase() : "COMMON";
+                
+                // Validate weapon
+                if (!BASE_WEAPONS[weaponName]) {
+                    this.print(`Invalid weapon: ${weaponName}`, "console-error");
+                    this.print("Available weapons: Pistol, Shotgun, Rifle", "console-warning");
+                    return;
+                }
+                
+                // Validate rarity
+                if (!RARITIES[rarityName]) {
+                    this.print(`Invalid rarity: ${rarityName}`, "console-error");
+                    this.print("Available rarities: COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, EXOTIC", "console-warning");
+                    return;
+                }
+                
+                // Add/upgrade weapon
+                const player = this.game.player;
+                const success = player.addWeapon(weaponName, rarityName);
+                
+                if (success) {
+                    this.print(`Added ${rarityName} ${weaponName}`, "console-success");
+                    player.equipWeapon(weaponName);
+                } else {
+                    this.print(`Upgraded ${weaponName} to ${rarityName}`, "console-success");
+                }
+            }
+
+            giveAmmo(args) {
+                const amount = parseInt(args[0]) || 100;
+                const player = this.game.player;
+                
+                if (player.weapon) {
+                    player.weapon.reserve = Math.min(player.weapon.reserve + amount, 999);
+                    player.updateHUD();
+                    this.print(`Added ${amount} ammo to reserve`, "console-success");
+                } else {
+                    this.print("No weapon equipped", "console-error");
+                }
+            }
+
+            setHealth(args) {
+                const amount = parseInt(args[0]) || 100;
+                this.game.player.health = Math.min(Math.max(amount, 0), 100);
+                document.getElementById('health').style.width = `${this.game.player.health}%`;
+                this.print(`Health set to ${amount}`, "console-success");
+            }
+
+            setArmor(args) {
+                const amount = parseInt(args[0]) || 100;
+                this.game.player.armor = Math.min(Math.max(amount, 0), 100);
+                document.getElementById('armor').style.width = `${this.game.player.armor}%`;
+                this.print(`Armor set to ${amount}`, "console-success");
+            }
+
+            toggleGodMode() {
+                this.game.player.godMode = !this.game.player.godMode;
+                this.print(`God mode ${this.game.player.godMode ? 'enabled' : 'disabled'}`, "console-success");
+            }
+
+            spawnCop(args) {
+                const count = parseInt(args[0]) || 1;
+                for (let i = 0; i < count; i++) {
+                    const cop = new NPC(this.game.scene, true);
+                    const angle = Math.random() * Math.PI * 2;
+                    cop.root.position.copy(this.game.player.mesh.position).add(new THREE.Vector3(Math.cos(angle) * 30, 0, Math.sin(angle) * 30));
+                    cop.root.position.y = 0.9;
+                    this.game.npcs.push(cop);
+                }
+                this.print(`Spawned ${count} police officer(s)`, "console-success");
+            }
+
+            spawnVehicle(args) {
+                const v = new Vehicle(this.game.scene, this.game.vehicles.length);
+                v.mesh.position.copy(this.game.player.mesh.position).add(new THREE.Vector3(10, 0, 10));
+                v.mesh.rotation.y = Math.random() * Math.PI * 2;
+                this.game.vehicles.push(v);
+                this.print("Spawned a vehicle", "console-success");
+            }
+
+            clearConsole() {
+                this.outputElement.innerHTML = '';
+                this.print("Console cleared", "console-success");
+            }
+
+            setWanted(args) {
+                const level = parseInt(args[0]) || 0;
+                this.game.wantedLevel = Math.min(Math.max(level, 0), 5);
+                
+                // Update UI
+                const container = document.getElementById('wanted');
+                container.innerHTML = "";
+                for (let i = 0; i < 5; i++) {
+                    const s = document.createElement('div');
+                    s.className = 'star' + (i < this.game.wantedLevel ? ' active' : '');
+                    container.appendChild(s);
+                }
+                
+                this.print(`Wanted level set to ${level}`, "console-success");
+            }
+
+            listWeapons() {
+                this.print("Available weapons:", "console-success");
+                for (const weapon in BASE_WEAPONS) {
+                    this.print(`  ${weapon}`, "console-warning");
+                }
+            }
+
+            listRarities() {
+                this.print("Rarity levels:", "console-success");
+                for (const rarity in RARITIES) {
+                    const color = RARITIES[rarity].color.toString(16).padStart(6, '0');
+                    this.print(`  <span style="color:#${color}">${rarity}</span> - ${RARITIES[rarity].damageMultiplier}x damage`, "console-warning");
+                }
+            }
+        }
+
+        // ==================== THIRD PERSON CAMERA ====================
+
+        class ThirdPersonCamera {
+            constructor(camera, target) {
+                this.camera = camera;
+                this.target = target;
+                this.distance = 10;
+                this.pitch = 0.4;
+                this.yaw = 0;
+                this.currentYaw = 0;
+                this.smoothSpeed = 5.0;
+            }
+
+            handleMouse(e) {
+                if (!document.pointerLockElement) return;
+                this.yaw -= e.movementX * 0.002;
+                this.pitch -= e.movementY * 0.002;
+                this.pitch = THREE.MathUtils.clamp(this.pitch, 0.1, 1.2);
+            }
+
+            update(dt) {
+                // Smoothly interpolate yaw
+                this.currentYaw = THREE.MathUtils.lerp(this.currentYaw, this.yaw, this.smoothSpeed * dt);
+                
+                const offset = new THREE.Vector3(
+                    Math.sin(this.currentYaw) * Math.cos(this.pitch),
+                    Math.sin(this.pitch),
+                    Math.cos(this.currentYaw) * Math.cos(this.pitch)
+                ).multiplyScalar(this.distance);
+
+                this.camera.position.copy(this.target.position).add(offset);
+                this.camera.lookAt(this.target.position.clone().add(new THREE.Vector3(0, 1.5, 0)));
+            }
+        }
+
+        // ==================== FIRST PERSON PLAYER ====================
+
+        class FirstPersonPlayer {
+            constructor(scene, camera) {
+                this.scene = scene;
+                this.camera = camera;
+                this.health = 100;
+                this.armor = 50;
+                this.weapon = null;
+                this.recoil = 0;
+                this.velocity = new THREE.Vector3();
+                this.isGrounded = false;
+                this.inVehicle = null;
+                this.godMode = false;
+                this.isReloading = false;
+
+                // First person camera settings
+                this.camera.position.set(0, 5, 25);
+                this.camera.rotation.order = 'YXZ';
+                
+                // Mouse look variables
+                this.yaw = 0;
+                this.pitch = 0;
+                this.mouseSensitivity = MOUSE_SENSITIVITY;
+
+                // Player capsule (invisible in first person, but needed for physics)
+                const geo = new THREE.CapsuleGeometry(0.4, 1.0, 8, 16);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: 0x0088ff,
+                    roughness: 0.8,
+                    metalness: 0.2,
+                    visible: false
+                });
+                this.mesh = new THREE.Mesh(geo, mat);
+                this.mesh.position.set(0, 5, 25);
+                this.mesh.castShadow = true;
+                scene.add(this.mesh);
+
+                // Third person camera for vehicles
+                this.vehicleCamera = null;
+
+                // Inventory System with rarities
+                this.inventory = {
+                    "Fists": { rarity: "COMMON", level: 0 }
+                };
+                
+                this.raycaster = new THREE.Raycaster();
+                this.equipWeapon("Fists");
+            }
+
+            takeDamage(amount) {
+                if (this.godMode) return;
+                
+                if (this.armor > 0) {
+                    this.armor = Math.max(0, this.armor - amount);
+                } else {
+                    this.health = Math.max(0, this.health - amount);
+                }
+                
+                // Update UI
+                document.getElementById('health').style.width = `${this.health}%`;
+                document.getElementById('armor').style.width = `${this.armor}%`;
+                
+                // Flash red screen effect
+                document.body.style.backgroundColor = '#ff0000';
+                setTimeout(() => {
+                    document.body.style.backgroundColor = '#000000';
+                }, 100);
+                
+                if (this.health <= 0) {
+                    this.die();
+                }
+            }
+
+            die() {
+                console.log("Player died!");
+                // Could add respawn logic here
+            }
+
+            handleMouseMove(e) {
+                if (this.inVehicle && this.vehicleCamera) {
+                    // In vehicle: use third person camera mouse controls
+                    this.vehicleCamera.handleMouse(e);
+                } else {
+                    // On foot: use first person mouse controls
+                    if (!document.pointerLockElement) return;
+                    
+                    this.yaw -= e.movementX * this.mouseSensitivity;
+                    this.pitch -= e.movementY * this.mouseSensitivity;
+                    
+                    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI/2, Math.PI/2);
+                    
+                    this.camera.rotation.y = this.yaw;
+                    this.camera.rotation.x = this.pitch + this.recoil;
+                }
+            }
+
+            // Create weapon with rarity modifiers
+            createWeapon(name, rarity) {
+                const base = BASE_WEAPONS[name];
+                const rarityData = RARITIES[rarity];
+                
+                if (!base || !rarityData) return null;
+                
+                return {
+                    name: base.name,
+                    rarity: rarity,
+                    ammo: Math.floor(base.baseAmmo * rarityData.ammoMultiplier),
+                    max: Math.floor(base.baseMax * rarityData.ammoMultiplier),
+                    reserve: Math.floor(base.baseReserve * rarityData.ammoMultiplier),
+                    fireRate: base.baseFireRate * rarityData.fireRateMultiplier,
+                    damage: Math.floor(base.baseDamage * rarityData.damageMultiplier),
+                    recoil: base.baseRecoil,
+                    range: base.baseRange,
+                    spread: base.baseSpread * rarityData.spreadMultiplier,
+                    pellets: base.pellets || 1,
+                    hasSpecialEffect: rarityData.specialEffect || false
+                };
+            }
+
+            equipWeapon(name) {
+                if (name === "Fists") {
+                    this.weapon = this.createWeapon("Fists", "COMMON");
+                    this.updateHUD();
+                    return;
+                }
+
+                if (!this.inventory[name]) {
+                    console.log(`Weapon ${name} not in inventory`);
+                    return;
+                }
+
+                const weaponRarity = this.inventory[name].rarity;
+                this.weapon = this.createWeapon(name, weaponRarity);
+                this.updateHUD();
+            }
+
+            addWeapon(name, rarity) {
+                // Check if player already has this weapon
+                if (this.inventory[name]) {
+                    // Upgrade to higher rarity if needed
+                    const currentRarity = this.inventory[name].rarity;
+                    const currentLevel = Object.keys(RARITIES).indexOf(currentRarity);
+                    const newLevel = Object.keys(RARITIES).indexOf(rarity);
+                    
+                    if (newLevel > currentLevel) {
+                        this.inventory[name].rarity = rarity;
+                        console.log(`Upgraded ${name} to ${rarity}`);
+                        
+                        // If this weapon is currently equipped, update it
+                        if (this.weapon && this.weapon.name === name) {
+                            this.equipWeapon(name);
+                        }
+                        return false; // Not new, but upgraded
+                    }
+                    return false; // Already have it, no upgrade
+                } else {
+                    // Add new weapon
+                    this.inventory[name] = { rarity: rarity, level: 0 };
+                    console.log(`Added ${rarity} ${name} to inventory`);
+                    return true; // New weapon
+                }
+            }
+
+            updateHUD() {
+                if (!this.weapon) return;
+                
+                const weaponName = this.weapon.name;
+                const ammoText = this.weapon.max > 0 ? 
+                    `${this.weapon.ammo}/${this.weapon.reserve}` : "∞";
+                const rarityName = this.weapon.rarity || "COMMON";
+                const rarityColor = RARITIES[rarityName]?.color || 0x888888;
+                const rarityClass = rarityName.toLowerCase();
+                
+                document.getElementById('weapon-name').textContent = `${weaponName} (${rarityName})`;
+                document.getElementById('ammo').textContent = ammoText;
+                document.getElementById('current-weapon').textContent = `${weaponName} (${rarityName})`;
+                document.getElementById('ammo-count').textContent = ammoText;
+                document.getElementById('rarity-dot').style.backgroundColor = `#${rarityColor.toString(16).padStart(6, '0')}`;
+                document.getElementById('weapon-rarity').textContent = rarityName;
+                document.getElementById('weapon-rarity').className = rarityClass;
+            }
+
+            reload() {
+                if (!this.weapon || this.isReloading || this.weapon.max === 0) return;
+                
+                // Check if we have reserve ammo
+                if (this.weapon.reserve <= 0) {
+                    this.game?.addKillfeed("Out of ammo!");
+                    return;
+                }
+                
+                // Check if we need to reload
+                if (this.weapon.ammo >= this.weapon.max) return;
+                
+                this.isReloading = true;
+                
+                // Calculate ammo needed
+                const ammoNeeded = this.weapon.max - this.weapon.ammo;
+                const ammoToAdd = Math.min(ammoNeeded, this.weapon.reserve);
+                
+                // Reload animation delay
+                setTimeout(() => {
+                    this.weapon.ammo += ammoToAdd;
+                    this.weapon.reserve -= ammoToAdd;
+                    this.isReloading = false;
+                    this.updateHUD();
+                    this.game?.addKillfeed(`Reloaded: ${ammoToAdd} rounds`);
+                }, 1000); // 1 second reload time
+            }
+
+            shoot(game) {
+                if (!this.weapon || this.weapon.ammo <= 0 || game.fireCooldown > 0 || this.isReloading) return;
+                if (this.weapon.name === "Fists") return;
+
+                game.fireCooldown = this.weapon.fireRate;
+                this.weapon.ammo--;
+
+                // Check for empty magazine
+                if (this.weapon.ammo <= 0 && this.weapon.reserve > 0) {
+                    // Auto-reload
+                    setTimeout(() => this.reload(), 500);
+                }
+
+                const origin = this.camera.position.clone();
+                const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+
+                // Apply weapon spread
+                const spread = this.weapon.spread || 0.03;
+                dir.add(new THREE.Vector3(
+                    (Math.random() - 0.5) * spread,
+                    (Math.random() - 0.5) * spread,
+                    0
+                )).normalize();
+
+                // Muzzle flash with rarity color
+                const flashColor = RARITIES[this.weapon.rarity]?.color || 0xffaa00;
+                const flash = new THREE.PointLight(flashColor, 3, 10);
+                flash.position.copy(origin).add(dir.multiplyScalar(2));
+                this.scene.add(flash);
+                setTimeout(() => this.scene.remove(flash), 50);
+
+                // Create bullet(s) with rarity
+                const shots = this.weapon.pellets || 1;
+                for (let i = 0; i < shots; i++) {
+                    const shotDir = dir.clone();
+                    if (this.weapon.pellets) {
+                        shotDir.add(new THREE.Vector3(
+                            (Math.random() - 0.5) * spread * 2,
+                            (Math.random() - 0.5) * spread * 2,
+                            0
+                        )).normalize();
+                        const bullet = new Bullet(this.scene, origin, shotDir, this.weapon.damage, this.weapon.name, this.weapon.rarity, true);
+                        game.bullets.push(bullet);
+                    } else {
+                        const bullet = new Bullet(this.scene, origin, shotDir, this.weapon.damage, this.weapon.name, this.weapon.rarity, false);
+                        game.bullets.push(bullet);
+                    }
+                }
+
+                // Apply recoil
+                this.recoil += this.weapon.recoil;
+                this.updateHUD();
+            }
+
+            update(dt, input, game) {
+                if (this.inVehicle) {
+                    // Player is in vehicle
+                    this.mesh.position.copy(this.inVehicle.mesh.position);
+                    this.mesh.position.y += 0.5;
+                    this.mesh.visible = false;
+                    this.camera.visible = false;
+                    
+                    // Update vehicle camera
+                    if (this.vehicleCamera) {
+                        this.vehicleCamera.update(dt);
+                    }
+                    return;
+                }
+                
+                // Player is on foot
+                this.mesh.visible = false;
+                this.camera.visible = true;
+
+                // --- Physics & Collision ---
+                this.velocity.y += GRAVITY * dt;
+
+                // Movement based on camera direction
+                const speed = input.sprint ? SPRINT_SPEED : PLAYER_SPEED;
+                
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+                forward.y = 0;
+                forward.normalize();
+                
+                const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0));
+
+                const move = new THREE.Vector3();
+                if (input.forward) move.add(forward);
+                if (input.backward) move.sub(forward);
+                if (input.right) move.add(right);
+                if (input.left) move.sub(right);
+
+                if (move.lengthSq() > 0) {
+                    move.normalize().multiplyScalar(speed);
+                    this.velocity.x = move.x;
+                    this.velocity.z = move.z;
+                } else {
+                    this.velocity.x *= 0.8;
+                    this.velocity.z *= 0.8;
+                }
+
+                const proposedPosition = this.mesh.position.clone().addScaledVector(this.velocity, dt);
+
+                // Wall Collision
+                let hitWall = false;
+                const playerBox = new THREE.Box3().setFromCenterAndSize(proposedPosition, new THREE.Vector3(1, 1.8, 1));
+
+                for (const building of game.buildings) {
+                    if (building.box.intersectsBox(playerBox)) {
+                        hitWall = true;
+                        this.velocity.x = 0;
+                        this.velocity.z = 0;
+                        break;
+                    }
+                }
+
+                if (!hitWall) {
+                    this.mesh.position.x = proposedPosition.x;
+                    this.mesh.position.z = proposedPosition.z;
+                }
+                this.mesh.position.y = proposedPosition.y;
+
+                // Ground Collision
+                this.raycaster.set(this.mesh.position, new THREE.Vector3(0, -1, 0));
+                const groundHits = this.raycaster.intersectObject(game.ground);
+
+                if ((groundHits.length > 0 && groundHits[0].distance < 1.0) || this.mesh.position.y < 0) {
+                    this.isGrounded = true;
+                    this.velocity.y = Math.max(0, this.velocity.y);
+                    this.mesh.position.y = Math.max(0.9, this.mesh.position.y);
+                } else {
+                    this.isGrounded = false;
+                }
+
+                if (input.jump && this.isGrounded) {
+                    this.velocity.y = JUMP;
+                    this.isGrounded = false;
+                }
+
+                // Recoil Decay
+                this.recoil = Math.max(0, this.recoil * 0.9);
+                
+                // Update first person camera position
+                this.camera.position.copy(this.mesh.position);
+                this.camera.position.y += 1.7;
+            }
+        }
+
+        // ==================== VEHICLE ====================
+
+        class Vehicle {
+            constructor(scene, index = 0) {
+                this.scene = scene;
+                this.speed = 0;
+                this.steering = 0;
+
+                // Simple car model
+                const carColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+                const carColor = index === 0 ? 0x0000ff : carColors[index % carColors.length];
+
+                this.mesh = new THREE.Group();
+
+                // Chassis
+                const body = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.2, 0.8, 4.8),
+                    new THREE.MeshStandardMaterial({
+                        color: carColor,
+                        roughness: 0.7,
+                        metalness: 0.5
+                    })
+                );
+                body.position.y = 0.6;
+                body.castShadow = true;
+                this.mesh.add(body);
+
+                // Cabin
+                const cabin = new THREE.Mesh(
+                    new THREE.BoxGeometry(2, 0.6, 2.5),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x111111,
+                        transparent: true,
+                        opacity: 0.7,
+                        roughness: 0.1,
+                        metalness: 0.9
+                    })
+                );
+                cabin.position.y = 1.3;
+                cabin.position.z = -0.5;
+                this.mesh.add(cabin);
+
+                // Wheels
+                const wGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16);
+                const wMat = new THREE.MeshStandardMaterial({
+                    color: 0x111111,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+
+                const positions = [[-1.1, 0.4, 1.5], [1.1, 0.4, 1.5], [-1.1, 0.4, -1.5], [1.1, 0.4, -1.5]];
+                positions.forEach(p => {
+                    const w = new THREE.Mesh(wGeo, wMat);
+                    w.rotation.z = Math.PI / 2;
+                    w.position.set(...p);
+                    this.mesh.add(w);
+                });
+
+                // Headlights
+                const hLight = new THREE.SpotLight(0xffffff, 5, 40, 0.6);
+                hLight.position.set(0, 1, -2.5);
+                hLight.target.position.set(0, 0, -10);
+                this.mesh.add(hLight);
+                this.mesh.add(hLight.target);
+
+                // Police lights for first car
+                if (index === 0) {
+                    const lightGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 8);
+                    
+                    // Red light
+                    const redLight = new THREE.Mesh(
+                        lightGeo,
+                        new THREE.MeshStandardMaterial({
+                            color: 0xff0000,
+                            emissive: 0xff0000,
+                            emissiveIntensity: 0.5
+                        })
+                    );
+                    redLight.position.set(0.8, 1.6, -0.5);
+                    this.mesh.add(redLight);
+
+                    // Blue light
+                    const blueLight = new THREE.Mesh(
+                        lightGeo,
+                        new THREE.MeshStandardMaterial({
+                            color: 0x0000ff,
+                            emissive: 0x0000ff,
+                            emissiveIntensity: 0.5
+                        })
+                    );
+                    blueLight.position.set(-0.8, 1.6, -0.5);
+                    this.mesh.add(blueLight);
+                }
+
+                scene.add(this.mesh);
+            }
+
+            update(dt, input, game) {
+                const accel = (input.forward ? 1 : 0) * 40 - (input.backward ? 1 : 0) * 30;
+                this.speed += accel * dt;
+                this.speed *= 0.98;
+
+                const futurePos = this.mesh.position.clone().addScaledVector(
+                    new THREE.Vector3(0, 0, 1).applyQuaternion(this.mesh.quaternion),
+                    this.speed * dt
+                );
+                
+                // Check collision with buildings
+                let hitBuilding = false;
+                const carBox = new THREE.Box3().setFromCenterAndSize(futurePos, new THREE.Vector3(2.2, 1, 4.8));
+                
+                for (const b of game.buildings) {
+                    if (b.box.intersectsBox(carBox)) {
+                        this.speed *= -0.5;
+                        hitBuilding = true;
+                        break;
+                    }
+                }
+
+                // Check collision with NPCs (run them over)
+                for (const npc of game.npcs) {
+                    if (npc.alive) {
+                        const distance = npc.root.position.distanceTo(this.mesh.position);
+                        if (distance < 2.0) { // Close enough to run over
+                            npc.takeDamage(1000, game); // Instant kill
+                            game.addKillfeed("NPC Run Over!");
+                            // Small speed reduction when hitting NPC
+                            this.speed *= 0.8;
+                            hitBuilding = true;
+                        }
+                    }
+                }
+
+                if (!hitBuilding) {
+                    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
+                    this.mesh.position.addScaledVector(forward, this.speed * dt);
+                }
+
+                // Steering
+                if (Math.abs(this.speed) > 1) {
+                    const turnFactor = Math.min(Math.abs(this.speed) / 10, 1);
+                    const steerInput = (input.left ? 1 : 0) - (input.right ? 1 : 0);
+                    this.steering = THREE.MathUtils.lerp(this.steering, steerInput, 5 * dt);
+                    this.mesh.rotation.y += this.steering * this.speed * 0.035 * dt;
+                }
+
+                // Keep within world bounds
+                const LIM = WORLD_SIZE / 2 - 10;
+                if (this.mesh.position.x < -LIM || this.mesh.position.x > LIM) { 
+                    this.speed *= -0.5; 
+                    this.mesh.position.x = Math.sign(this.mesh.position.x) * LIM; 
+                }
+                if (this.mesh.position.z < -LIM || this.mesh.position.z > LIM) { 
+                    this.speed *= -0.5; 
+                    this.mesh.position.z = Math.sign(this.mesh.position.z) * LIM; 
+                }
+            }
+        }
+
+        // ==================== NPC ====================
+
+        class NPC {
+            constructor(scene, isCop = false) {
+                this.scene = scene;
+                this.health = 100;
+                this.alive = true;
+                this.isCop = isCop;
+                this.shootCooldown = 0;
+                this.accuracy = isCop ? 0.8 : 0;
+                this.attackRange = isCop ? 80 : 0;
+                this.lastAttackTime = 0;
+                this.targetPosition = null;
+                this.awarenessRadius = isCop ? 100 : 50;
+
+                // Create weapon for cop with random rarity (higher wanted level = better rarity)
+                if (isCop) {
+                    const rarities = Object.keys(RARITIES);
+                    const rarityIndex = Math.min(Math.floor(Math.random() * 3), rarities.length - 1); // Cops drop up to RARE
+                    this.weaponRarity = rarities[rarityIndex];
+                }
+
+                // Simple NPC model
+                const group = new THREE.Group();
+                
+                // Color based on type
+                const color = isCop ? 0x0000ff : new THREE.Color().setHSL(Math.random(), 0.8, 0.5);
+
+                const geo = new THREE.CapsuleGeometry(0.35, 1.4);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: color,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                this.mesh = new THREE.Mesh(geo, mat);
+                this.mesh.castShadow = true;
+                this.mesh.position.y = 0.9;
+
+                group.add(this.mesh);
+                this.root = group;
+                scene.add(this.root);
+
+                this.wanderDir = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+                this.wanderTimer = 0;
+                this.raycaster = new THREE.Raycaster();
+            }
+
+            dropWeaponUpgrade(game) {
+                if (!this.isCop) return;
+                
+                // Drop weapon upgrade with this cop's rarity
+                const weaponTypes = ["Pistol", "Shotgun", "Rifle"];
+                const randomWeapon = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
+                
+                // Create upgrade pickup
+                const upgrade = new WeaponUpgradePickup(
+                    game.scene,
+                    this.root.position.clone(),
+                    randomWeapon,
+                    this.weaponRarity
+                );
+                
+                game.drops.push(upgrade);
+                game.addKillfeed(`${this.weaponRarity} ${randomWeapon} dropped!`);
+            }
+
+            takeDamage(amount, game) {
+                if (!this.alive) return;
+                this.health -= amount;
+
+                this.mesh.material.emissive.setHex(0xff0000);
+                setTimeout(() => {
+                    if (this.mesh && this.mesh.material) {
+                        this.mesh.material.emissive.setHex(0x000000);
+                    }
+                }, 100);
+
+                if (this.health <= 0) {
+                    this.alive = false;
+                    
+                    // Drop weapon upgrade if cop
+                    if (this.isCop) {
+                        this.dropWeaponUpgrade(game);
+                        game.increaseWanted();
+                        game.addKillfeed("Police Officer Down");
+                    } else {
+                        game.addKillfeed("Civilian Eliminated");
+                    }
+
+                    // Ragdoll
+                    this.root.rotation.x = Math.PI / 2;
+                    this.root.position.y = 0.2;
+
+                    // Blood pool
+                    const blood = new THREE.Mesh(new THREE.CircleGeometry(1, 8), new THREE.MeshBasicMaterial({ color: 0x880000 }));
+                    blood.rotation.x = -Math.PI / 2;
+                    blood.position.copy(this.root.position);
+                    blood.position.y = 0.02;
+                    game.scene.add(blood);
+
+                    setTimeout(() => {
+                        game.scene.remove(this.root);
+                        game.scene.remove(blood);
+                    }, 10000);
+                }
+            }
+
+            update(dt, game) {
+                if (!this.alive) return;
+                
+                // Update shoot cooldown
+                if (this.shootCooldown > 0) {
+                    this.shootCooldown -= dt;
+                }
+                
+                // Cops attack player
+                if (this.isCop && game.player.health > 0) {
+                    const distanceToPlayer = this.root.position.distanceTo(game.player.mesh.position);
+                    
+                    if (distanceToPlayer < this.awarenessRadius) {
+                        // Face player
+                        const lookAtPlayer = new THREE.Vector3().subVectors(game.player.mesh.position, this.root.position);
+                        lookAtPlayer.y = 0;
+                        this.root.lookAt(this.root.position.clone().add(lookAtPlayer));
+                        
+                        // Check line of sight
+                        this.raycaster.set(this.root.position, lookAtPlayer.normalize());
+                        let canSeePlayer = false;
+                        
+                        // Check if player is visible (not behind buildings)
+                        for (const building of game.buildings) {
+                            const intersects = this.raycaster.intersectObject(building.mesh);
+                            if (intersects.length > 0 && intersects[0].distance < distanceToPlayer) {
+                                canSeePlayer = false;
+                                break;
+                            }
+                            canSeePlayer = true;
+                        }
+                        
+                        if (canSeePlayer && distanceToPlayer < this.attackRange) {
+                            // Set target position (aim for center mass)
+                            this.targetPosition = game.player.mesh.position.clone().add(new THREE.Vector3(0, 1, 0));
+                            
+                            // Shoot at player (simplified for NPCs)
+                            if (this.shootCooldown <= 0) {
+                                this.shootCooldown = 1.0;
+                                
+                                // Create bullet
+                                const origin = this.root.position.clone();
+                                origin.y += 1.5;
+                                const direction = lookAtPlayer.normalize();
+                                
+                                // Add inaccuracy
+                                if (Math.random() > this.accuracy) {
+                                    direction.add(new THREE.Vector3(
+                                        (Math.random() - 0.5) * 0.2,
+                                        (Math.random() - 0.5) * 0.2,
+                                        0
+                                    )).normalize();
+                                }
+                                
+                                const bullet = new Bullet(game.scene, origin, direction, 15, "Pistol", this.weaponRarity, false);
+                                game.bullets.push(bullet);
+                            }
+                        }
+                    }
+                }
+
+                // Wander AI for non-attacking or when not targeting player
+                this.wanderTimer -= dt;
+                if (this.wanderTimer <= 0 || (!this.targetPosition && this.isCop)) {
+                    this.wanderTimer = 2 + Math.random() * 3;
+                    if (this.isCop && game.wantedLevel > 0) {
+                        // Move towards last known player position
+                        const dirToPlayer = new THREE.Vector3().subVectors(game.player.mesh.position, this.root.position).normalize();
+                        this.wanderDir = dirToPlayer.add(new THREE.Vector3((Math.random() - 0.5), 0, (Math.random() - 0.5))).normalize();
+                    } else {
+                        this.wanderDir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+                    }
+                }
+
+                // Move
+                const speed = this.isCop ? 4 : 2;
+                const proposed = this.root.position.clone().addScaledVector(this.wanderDir, speed * dt);
+
+                let hit = false;
+                const npcBox = new THREE.Box3().setFromCenterAndSize(proposed, new THREE.Vector3(0.7, 1.8, 0.7));
+                for (const b of game.buildings) {
+                    if (b.box.intersectsBox(npcBox)) { hit = true; break; }
+                }
+
+                if (!hit) {
+                    this.root.position.copy(proposed);
+                    if (!this.targetPosition || this.shootCooldown > 0) {
+                        this.root.lookAt(this.root.position.clone().add(this.wanderDir));
+                    }
+                } else {
+                    this.wanderDir.negate();
+                }
+            }
+        }
+
+        // ==================== WEAPON UPGRADE PICKUP ====================
+
+        class WeaponUpgradePickup {
+            constructor(scene, position, weaponType, rarity) {
+                this.scene = scene;
+                this.weaponType = weaponType;
+                this.rarity = rarity;
+                this.color = RARITIES[rarity].color;
+                
+                // Create pickup mesh with rarity color
+                this.mesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.6, 0.6, 0.6),
+                    new THREE.MeshStandardMaterial({
+                        color: this.color,
+                        emissive: this.color,
+                        emissiveIntensity: 0.7,
+                        metalness: 0.8,
+                        roughness: 0.2
+                    })
+                );
+                
+                this.mesh.position.copy(position);
+                this.mesh.position.y = 1;
+                scene.add(this.mesh);
+                
+                // Add glow effect
+                const light = new THREE.PointLight(this.color, 2, 8);
+                this.mesh.add(light);
+                
+                // Add rarity text above
+                this.createRarityText();
+                
+                // Animate
+                this.animate();
+            }
+            
+            createRarityText() {
+                // Create floating text effect using geometry
+                const textHeight = 0.3;
+                const textDepth = 0.05;
+                const textGeometry = new THREE.BoxGeometry(0.8, textHeight, textDepth);
+                const textMaterial = new THREE.MeshBasicMaterial({ 
+                    color: this.color,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                this.textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                this.textMesh.position.set(0, 1, 0);
+                this.mesh.add(this.textMesh);
+            }
+            
+            animate() {
+                if (!this.mesh.parent) return;
+                
+                // Rotate and float
+                this.mesh.rotation.y += 0.03;
+                this.mesh.position.y = 1 + Math.sin(Date.now() * 0.003) * 0.3;
+                
+                // Pulse the text
+                if (this.textMesh) {
+                    this.textMesh.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.2);
+                }
+                
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            remove() {
+                this.scene.remove(this.mesh);
+            }
+        }
+
+        // ==================== MINIMAP ====================
+
+        class Minimap {
+            constructor(game) {
+                this.canvas = document.getElementById('minimap-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.game = game;
+                this.ctx.translate(110, 110);
+            }
+
+            draw() {
+                this.ctx.save();
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                this.ctx.clearRect(0, 0, 220, 220);
+                this.ctx.restore();
+
+                const pPos = this.game.player.mesh.position;
+                const zoom = 0.15;
+
+                this.ctx.save();
+                this.ctx.scale(zoom, zoom);
+                
+                // Use player yaw or vehicle camera yaw
+                let rotation = this.game.player.yaw;
+                if (this.game.player.inVehicle && this.game.player.vehicleCamera) {
+                    rotation = this.game.player.vehicleCamera.currentYaw;
+                }
+                
+                this.ctx.rotate(rotation);
+                this.ctx.translate(-pPos.x, -pPos.z);
+
+                // Draw Buildings
+                this.ctx.fillStyle = "#666";
+                for (const b of this.game.buildings) {
+                    if (Math.abs(b.mesh.position.x - pPos.x) < 250 && Math.abs(b.mesh.position.z - pPos.z) < 250) {
+                        this.ctx.fillRect(
+                            b.mesh.position.x - b.w / 2,
+                            b.mesh.position.z - b.d / 2,
+                            b.w, b.d
+                        );
+                    }
+                }
+
+                // Draw Weapon Upgrades - larger with rarity colors
+                for (const drop of this.game.drops) {
+                    if (drop instanceof WeaponUpgradePickup) {
+                        const colorHex = drop.color.toString(16).padStart(6, '0');
+                        this.ctx.fillStyle = '#' + colorHex;
+                        this.ctx.beginPath();
+                        this.ctx.arc(drop.mesh.position.x, drop.mesh.position.z, 8, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        
+                        // Add glow
+                        this.ctx.shadowColor = '#' + colorHex;
+                        this.ctx.shadowBlur = 15;
+                        this.ctx.fill();
+                        this.ctx.shadowBlur = 0;
+                        
+                        // Add rarity letter
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.font = 'bold 10px Arial';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillText(drop.rarity.charAt(0), drop.mesh.position.x, drop.mesh.position.z);
+                    }
+                }
+
+                // Draw NPCs - larger dots
+                const blink = Math.floor(Date.now() / 200) % 2 === 0;
+                for (const n of this.game.npcs) {
+                    if (!n.alive) continue;
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(n.root.position.x, n.root.position.z, 6, 0, Math.PI * 2);
+
+                    if (n.isCop) {
+                        this.ctx.fillStyle = blink ? "#ff0000" : "#0000ff";
+                        // Pulsing effect for cops
+                        const pulse = Math.sin(Date.now() * 0.005) * 2 + 6;
+                        this.ctx.arc(n.root.position.x, n.root.position.z, pulse, 0, Math.PI * 2);
+                    } else {
+                        this.ctx.fillStyle = "#ff4444";
+                    }
+                    this.ctx.fill();
+                }
+
+                // Draw Vehicles
+                for (const v of this.game.vehicles) {
+                    this.ctx.fillStyle = v.mesh.children[0].material.color.getStyle();
+                    // Draw car shape
+                    this.ctx.save();
+                    this.ctx.translate(v.mesh.position.x, v.mesh.position.z);
+                    this.ctx.rotate(v.mesh.rotation.y);
+                    this.ctx.fillRect(-8, -12, 16, 24);
+                    this.ctx.restore();
+                }
+
+                this.ctx.restore();
+
+                // Draw Player Arrow
+                this.ctx.fillStyle = "#00ffff";
+                this.ctx.save();
+                
+                let arrowRotation = this.game.player.yaw;
+                if (this.game.player.inVehicle && this.game.player.vehicleCamera) {
+                    arrowRotation = this.game.player.vehicleCamera.currentYaw;
+                }
+                
+                this.ctx.rotate(arrowRotation);
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, -15);
+                this.ctx.lineTo(12, 15);
+                this.ctx.lineTo(-12, 15);
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                // Add player direction line
+                this.ctx.strokeStyle = "#00ffff";
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, 0);
+                this.ctx.lineTo(0, -25);
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            }
+        }
+
+        // ==================== GAME ====================
+
+        class Game {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 3000);
+                this.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
+                this.renderer.setSize(innerWidth, innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.clock = new THREE.Clock();
+
+                // Environment
+                this.scene.background = new THREE.Color(0x111118);
+                this.scene.fog = new THREE.FogExp2(0x111118, 0.002);
+
+                // Ground
+                this.ground = new THREE.Mesh(
+                    new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE),
+                    new THREE.MeshStandardMaterial({
+                        color: 0x1a1a1a,
+                        roughness: 0.9,
+                        metalness: 0.1
+                    })
+                );
+                this.ground.rotation.x = -Math.PI / 2;
+                this.ground.receiveShadow = true;
+                this.scene.add(this.ground);
+
+                // Grid
+                const grid = new THREE.GridHelper(WORLD_SIZE, 40, 0x444444, 0x222222);
+                this.scene.add(grid);
+
+                // Lighting
+                const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambLight);
+
+                const moonLight = new THREE.DirectionalLight(0xaaccff, 0.8);
+                moonLight.position.set(500, 1000, 500);
+                moonLight.castShadow = true;
+                moonLight.shadow.camera.top = 200;
+                moonLight.shadow.camera.bottom = -200;
+                moonLight.shadow.camera.left = -200;
+                moonLight.shadow.camera.right = 200;
+                this.scene.add(moonLight);
+
+                // Entities
+                this.player = new FirstPersonPlayer(this.scene, this.camera);
+                this.player.game = this; // Reference to game for killfeed
+                
+                this.vehicles = [];
+                this.npcs = [];
+                this.bullets = [];
+                this.buildings = [];
+                this.drops = []; // Now includes weapon upgrades
+                this.wantedLevel = 0;
+                this.fireCooldown = 0;
+
+                this.radio = new SynthRadio();
+                this.minimap = new Minimap(this);
+                
+                // Initialize console system
+                this.console = new GameConsole(this);
+
+                this.input = { forward: 0, backward: 0, left: 0, right: 0, sprint: false, jump: false, shoot: false, reload: false };
+
+                this.spawnWorld();
+                this.setupControls();
+                this.animate();
+            }
+
+            spawnWorld() {
+                // 1. Buildings
+                const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
+                const wallMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x333333,
+                    roughness: 0.8,
+                    metalness: 0.2
+                });
+
+                for (let i = 0; i < 60; i++) {
+                    const w = 15 + Math.random() * 25;
+                    const h = 25 + Math.random() * 75;
+                    const d = 15 + Math.random() * 25;
+                    const x = (Math.random() - 0.5) * 1200;
+                    const z = (Math.random() - 0.5) * 1200;
+
+                    if (Math.abs(x) < 50 && Math.abs(z) < 50) continue;
+
+                    const mesh = new THREE.Mesh(buildingGeo, wallMat);
+                    mesh.scale.set(w, h, d);
+                    mesh.position.set(x, h / 2, z);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    this.scene.add(mesh);
+
+                    const box = new THREE.Box3().setFromCenterAndSize(mesh.position, new THREE.Vector3(w, h, d));
+                    this.buildings.push({ mesh, box, w, d });
+
+                    // Add windows
+                    if (Math.random() > 0.5) {
+                        const wins = new THREE.Mesh(
+                            new THREE.BoxGeometry(w + 0.2, h / 2, d + 0.2),
+                            new THREE.MeshBasicMaterial({
+                                color: 0x00ffff,
+                                wireframe: true,
+                                transparent: true,
+                                opacity: 0.1
+                            })
+                        );
+                        wins.position.copy(mesh.position);
+                        this.scene.add(wins);
+                    }
+                }
+
+                // 2. Cars
+                // Police car
+                const policeCar = new Vehicle(this.scene, 0);
+                policeCar.mesh.position.set(20, 0.6, 20);
+                policeCar.mesh.rotation.y = Math.random() * Math.PI * 2;
+                this.vehicles.push(policeCar);
+
+                // Civilian cars
+                for (let i = 1; i < 8; i++) {
+                    const v = new Vehicle(this.scene, i);
+                    v.mesh.position.set((Math.random() - 0.5) * 800, 0.6, (Math.random() - 0.5) * 800);
+                    v.mesh.rotation.y = Math.random() * Math.PI * 2;
+                    this.vehicles.push(v);
+                }
+
+                // 3. NPCs
+                for (let i = 0; i < 15; i++) {
+                    const isCop = Math.random() > 0.7;
+                    const n = new NPC(this.scene, isCop);
+                    n.root.position.set((Math.random() - 0.5) * 900, 0.9, (Math.random() - 0.5) * 900);
+                    n.isCop = isCop;
+                    this.npcs.push(n);
+                }
+
+                // 4. Initial weapon drops (common rarity)
+                this.spawnWeaponDrop(new THREE.Vector3(10, 1, 10), "Pistol", "COMMON");
+                this.spawnWeaponDrop(new THREE.Vector3(-15, 1, 20), "Shotgun", "COMMON");
+                this.spawnWeaponDrop(new THREE.Vector3(25, 1, -10), "Rifle", "COMMON");
+            }
+
+            spawnWeaponDrop(pos, weaponType, rarity) {
+                const upgrade = new WeaponUpgradePickup(this.scene, pos, weaponType, rarity);
+                this.drops.push(upgrade);
+            }
+
+            increaseWanted() {
+                this.wantedLevel = Math.min(5, this.wantedLevel + 1);
+                const container = document.getElementById('wanted');
+                container.innerHTML = "";
+                for (let i = 0; i < 5; i++) {
+                    const s = document.createElement('div');
+                    s.className = 'star' + (i < this.wantedLevel ? ' active' : '');
+                    container.appendChild(s);
+                }
+
+                // Spawn additional police
+                for (let i = 0; i < this.wantedLevel; i++) {
+                    setTimeout(() => {
+                        const cop = new NPC(this.scene, true);
+                        const angle = Math.random() * Math.PI * 2;
+                        cop.root.position.copy(this.player.mesh.position).add(new THREE.Vector3(Math.cos(angle) * 40, 0, Math.sin(angle) * 40));
+                        cop.root.position.y = 0.9;
+                        cop.isCop = true;
+                        this.npcs.push(cop);
+                        this.addKillfeed("Police dispatched!");
+                    }, i * 1000);
+                }
+            }
+
+            addKillfeed(text) {
+                const div = document.createElement('div');
+                div.className = 'msg';
+                div.textContent = text;
+                const log = document.getElementById('msg-log');
+                log.appendChild(div);
+                setTimeout(() => div.remove(), 4000);
+            }
+
+            setupControls() {
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = innerWidth / innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(innerWidth, innerHeight);
+                });
+
+                // Click anywhere to lock pointer for mouse look
+                document.addEventListener('click', () => {
+                    document.body.requestPointerLock();
+                });
+
+                // Mouse movement for looking around
+                document.addEventListener('mousemove', e => this.player.handleMouseMove(e));
+
+                // Keyboard controls
+                window.addEventListener('keydown', e => {
+                    // Don't process if console is open (except for console toggle)
+                    if (this.console.isOpen && e.key !== '`' && e.key !== '~') {
+                        return;
+                    }
+                    
+                    switch (e.code) {
+                        case 'KeyW': this.input.forward = 1; break;
+                        case 'KeyS': this.input.backward = 1; break;
+                        case 'KeyA': this.input.left = 1; break;
+                        case 'KeyD': this.input.right = 1; break;
+                        case 'ShiftLeft': this.input.sprint = true; break;
+                        case 'Space': this.input.jump = true; break;
+                        case 'KeyE': this.tryEnterVehicle(); break;
+                        case 'KeyF':
+                            const stName = this.radio.toggle();
+                            document.getElementById('station').textContent = stName;
+                            break;
+                        case 'KeyR': 
+                            this.input.reload = true;
+                            if (!this.player.isReloading) {
+                                this.player.reload();
+                            }
+                            break;
+                        case 'Digit1': this.player.equipWeapon("Pistol"); break;
+                        case 'Digit2': this.player.equipWeapon("Shotgun"); break;
+                        case 'Digit3': this.player.equipWeapon("Rifle"); break;
+                        case 'Digit4': this.player.equipWeapon("Fists"); break;
+                    }
+                });
+                window.addEventListener('keyup', e => {
+                    switch (e.code) {
+                        case 'KeyW': this.input.forward = 0; break;
+                        case 'KeyS': this.input.backward = 0; break;
+                        case 'KeyA': this.input.left = 0; break;
+                        case 'KeyD': this.input.right = 0; break;
+                        case 'ShiftLeft': this.input.sprint = false; break;
+                        case 'Space': this.input.jump = false; break;
+                        case 'KeyR': this.input.reload = false; break;
+                    }
+                });
+                window.addEventListener('mousedown', e => { 
+                    if (document.pointerLockElement && e.button === 0 && !this.console.isOpen) {
+                        this.input.shoot = true; 
+                    }
+                });
+                window.addEventListener('mouseup', e => { 
+                    if (e.button === 0) this.input.shoot = false; 
+                });
+            }
+
+            tryEnterVehicle() {
+                const prompt = document.getElementById('prompt');
+
+                if (this.player.inVehicle) {
+                    // Exit vehicle
+                    const car = this.player.inVehicle;
+                    this.player.inVehicle = null;
+                    this.player.vehicleCamera = null;
+                    
+                    // Reset player position near car
+                    this.player.mesh.position.copy(car.mesh.position).add(new THREE.Vector3(-3, 0, 0));
+                    this.player.velocity.set(0, 0, 0);
+                    
+                    // Reset camera to first person
+                    this.camera.visible = true;
+                    this.camera.rotation.y = this.player.yaw;
+                    this.camera.rotation.x = this.player.pitch;
+                    
+                    prompt.style.display = 'none';
+                    document.getElementById('crosshair').style.display = 'block';
+                    return;
+                }
+
+                // Enter vehicle
+                for (const v of this.vehicles) {
+                    if (v.mesh.position.distanceTo(this.player.mesh.position) < 5) {
+                        this.player.inVehicle = v;
+                        
+                        // Create third person camera for vehicle
+                        this.player.vehicleCamera = new ThirdPersonCamera(this.camera, v.mesh);
+                        
+                        // Hide crosshair in vehicle
+                        document.getElementById('crosshair').style.display = 'none';
+                        
+                        prompt.style.display = 'none';
+                        this.input.shoot = false;
+                        break;
+                    }
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const dt = Math.min(this.clock.getDelta(), 0.05);
+
+                if (this.fireCooldown > 0) this.fireCooldown -= dt;
+                if (this.input.shoot) this.player.shoot(this);
+
+                this.player.update(dt, this.input, this);
+
+                // Show/Hide enter prompt
+                let nearCar = false;
+                if (!this.player.inVehicle) {
+                    for (const v of this.vehicles) {
+                        if (v.mesh.position.distanceTo(this.player.mesh.position) < 5) nearCar = true;
+                    }
+                }
+                document.getElementById('prompt').style.display = (nearCar || this.player.inVehicle) ? 'block' : 'none';
+                
+                // Show/Hide crosshair based on vehicle status
+                document.getElementById('crosshair').style.display = this.player.inVehicle ? 'none' : 'block';
+
+                // Update Vehicles
+                this.vehicles.forEach(v => v.update(dt, v === this.player.inVehicle ? this.input : {}, this));
+
+                // Update NPCs
+                this.npcs.forEach(n => n.update(dt, this));
+
+                // Update Bullets
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    if (!bullet.update(dt, this)) {
+                        this.bullets.splice(i, 1);
+                    }
+                }
+
+                // Weapon Upgrade Pickups
+                for (let i = this.drops.length - 1; i >= 0; i--) {
+                    const drop = this.drops[i];
+                    if (drop.mesh.position.distanceTo(this.player.mesh.position) < 2) {
+                        const isNew = this.player.addWeapon(drop.weaponType, drop.rarity);
+                        this.player.equipWeapon(drop.weaponType);
+                        
+                        const rarityName = drop.rarity.toLowerCase();
+                        this.addKillfeed(isNew ? 
+                            `Acquired ${rarityName} ${drop.weaponType}` : 
+                            `Upgraded ${drop.weaponType} to ${rarityName}`
+                        );
+
+                        drop.remove();
+                        this.drops.splice(i, 1);
+                    }
+                }
+
+                // Update UI
+                document.getElementById('health').style.width = `${this.player.health}%`;
+                document.getElementById('armor').style.width = `${this.player.armor}%`;
+
+                // Render Map
+                this.minimap.draw();
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // START GAME
+        new Game();
+    </script>
+</body>
+</html>
