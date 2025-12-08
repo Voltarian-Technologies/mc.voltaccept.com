@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>GTA 5 Mini - Enhanced Edition with Weapon Rarities & Console</title>
+    <title>Artificial Autos - Enhanced Edition with Weapon Rarities & Console</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body {
@@ -275,7 +275,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.95);
             color: #0f0;
             font-family: 'Courier New', monospace;
             font-size: 14px;
@@ -302,6 +302,7 @@
             font-size: 14px;
             padding: 10px;
             outline: none;
+            pointer-events: auto;
         }
 
         .console-line {
@@ -325,16 +326,108 @@
         }
 
         /* Rarity Colors */
-        .common { color: #888888; }
-        .uncommon { color: #00ff00; }
-        .rare { color: #0088ff; }
-        .epic { color: #ff00ff; }
-        .legendary { color: #ff8800; }
-        .exotic { color: #ffd700; } /* Destiny 2 exotic yellow */
+        .common {
+            color: #888888;
+        }
+
+        .uncommon {
+            color: #00ff00;
+        }
+
+        .rare {
+            color: #0088ff;
+        }
+
+        .epic {
+            color: #ff00ff;
+        }
+
+        .legendary {
+            color: #ff8800;
+        }
+
+        .exotic {
+            color: #ffd700;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-family: 'Courier New', monospace;
+        }
+
+        #loading-bar-container {
+            width: 300px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        #loading-bar {
+            width: 0%;
+            height: 100%;
+            background: #0f0;
+            transition: width 0.3s ease;
+        }
+
+        /* Death/Respawn Screen */
+        #death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            font-family: 'Courier New', monospace;
+            color: #ff0000;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        #respawn-timer {
+            font-size: 1.5em;
+            color: #fff;
+            margin-top: 20px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <h1 style="color: #0f0; margin-bottom: 20px;">ARTIFICIAL AUTOS</h1>
+        <div style="color: #0ff; margin-bottom: 30px;">Loading Enhanced Edition...</div>
+        <div id="loading-bar-container">
+            <div id="loading-bar"></div>
+        </div>
+        <div id="loading-text" style="color: #ccc; margin-top: 10px; font-size: 0.9em;">Initializing game systems...
+        </div>
+    </div>
+
+    <!-- Death Screen -->
+    <div id="death-screen">
+        <div style="font-size: 3em; margin-bottom: 20px;">WASTED</div>
+        <div id="respawn-timer">Respawning in 5 seconds...</div>
+    </div>
+
     <div id="ui">
         <div id="controls-hint">
             WASD: Move/Drive<br>
@@ -357,7 +450,7 @@
             <div style="font-size: 1.2em;">AMMO: <span id="ammo" style="color:#ff0">∞</span></div>
         </div>
         <div id="weapon-hud">
-            <span id="current-weapon">Fists</span> 
+            <span id="current-weapon">Fists</span>
             <span id="weapon-rarity" class="common"></span>
             <div id="rarity-dot" class="rarity-dot" style="background-color: #888888;"></div>
             | <span id="ammo-count">∞</span>
@@ -374,13 +467,13 @@
         </div>
         <div id="minimap"><canvas id="minimap-canvas" width="220" height="220"></canvas></div>
     </div>
-    
+
     <!-- Console Terminal -->
     <div id="console">
         <div id="console-output"></div>
         <input type="text" id="console-input" placeholder="Type commands here...">
     </div>
-    
+
     <canvas id="game-canvas"></canvas>
 
     <script type="importmap">
@@ -401,48 +494,48 @@
 
         // Weapon Rarities
         const RARITIES = {
-            COMMON: { 
-                name: "COMMON", 
+            COMMON: {
+                name: "COMMON",
                 color: 0x888888,
                 damageMultiplier: 1.0,
                 fireRateMultiplier: 1.0,
                 ammoMultiplier: 1.0,
                 spreadMultiplier: 1.0
             },
-            UNCOMMON: { 
-                name: "UNCOMMON", 
+            UNCOMMON: {
+                name: "UNCOMMON",
                 color: 0x00ff00,
                 damageMultiplier: 1.2,
                 fireRateMultiplier: 0.9,
                 ammoMultiplier: 1.2,
                 spreadMultiplier: 0.9
             },
-            RARE: { 
-                name: "RARE", 
+            RARE: {
+                name: "RARE",
                 color: 0x0088ff,
                 damageMultiplier: 1.5,
                 fireRateMultiplier: 0.85,
                 ammoMultiplier: 1.5,
                 spreadMultiplier: 0.85
             },
-            EPIC: { 
-                name: "EPIC", 
+            EPIC: {
+                name: "EPIC",
                 color: 0xff00ff,
                 damageMultiplier: 1.8,
                 fireRateMultiplier: 0.8,
                 ammoMultiplier: 1.8,
                 spreadMultiplier: 0.8
             },
-            LEGENDARY: { 
-                name: "LEGENDARY", 
+            LEGENDARY: {
+                name: "LEGENDARY",
                 color: 0xff8800,
                 damageMultiplier: 2.2,
                 fireRateMultiplier: 0.75,
                 ammoMultiplier: 2.2,
                 spreadMultiplier: 0.75
             },
-            EXOTIC: { 
-                name: "EXOTIC", 
+            EXOTIC: {
+                name: "EXOTIC",
                 color: 0xffd700, // Destiny 2 exotic yellow
                 damageMultiplier: 3.0,
                 fireRateMultiplier: 0.7,
@@ -454,49 +547,48 @@
 
         // Base weapons without rarity modifiers
         const BASE_WEAPONS = {
-            Fists: { 
-                name: "Fists", 
-                baseAmmo: 0, 
-                baseMax: 0, 
-                baseReserve: 0, 
-                baseFireRate: 0.5, 
-                baseDamage: 5, 
-                baseRecoil: 0, 
+            Fists: {
+                name: "Fists",
+                baseAmmo: 0,
+                baseMax: 0,
+                baseReserve: 0,
+                baseFireRate: 0.5,
+                baseDamage: 5,
+                baseRecoil: 0,
                 baseRange: 2,
                 baseSpread: 0
             },
-            Pistol: { 
-                name: "Pistol", 
-                baseAmmo: 12, 
-                baseMax: 12, 
-                baseReserve: 48, 
-                baseFireRate: 0.3, 
-                baseDamage: 20, 
-                baseRecoil: 0.1, 
+            Pistol: {
+                name: "Pistol",
+                baseAmmo: 12,
+                baseMax: 12,
+                baseReserve: 48,
+                baseFireRate: 0.3,
+                baseDamage: 20,
+                baseRecoil: 0.1,
                 baseRange: 100,
                 baseSpread: 0.03
             },
-            Shotgun: { 
-                name: "Shotgun", 
-                baseAmmo: 6, 
-                baseMax: 6, 
-                baseReserve: 24, 
-                baseFireRate: 1.0, 
-                baseDamage: 12, 
-                pellets: 8, 
-                baseSpread: 0.15, 
-                baseRecoil: 0.3, 
+            Shotgun: {
+                name: "Shotgun",
+                baseAmmo: 6,
+                baseMax: 6,
+                baseReserve: 24,
+                baseFireRate: 1.0,
+                baseDamage: 12,
+                pellets: 8,
+                baseSpread: 0.15,
+                baseRecoil: 0.3,
                 baseRange: 40,
-                baseSpread: 0.15
             },
-            Rifle: { 
-                name: "Carbine", 
-                baseAmmo: 20, 
-                baseMax: 20, 
-                baseReserve: 80, 
-                baseFireRate: 0.12, 
-                baseDamage: 15, 
-                baseRecoil: 0.15, 
+            Rifle: {
+                name: "Carbine",
+                baseAmmo: 20,
+                baseMax: 20,
+                baseReserve: 80,
+                baseFireRate: 0.12,
+                baseDamage: 15,
+                baseRecoil: 0.15,
                 baseRange: 200,
                 baseSpread: 0.04
             }
@@ -623,7 +715,7 @@
                 const bulletColor = RARITIES[rarity]?.color || 0xffff00;
                 const geometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
                 geometry.rotateX(Math.PI / 2);
-                const material = new THREE.MeshBasicMaterial({ 
+                const material = new THREE.MeshBasicMaterial({
                     color: bulletColor
                 });
                 this.mesh = new THREE.Mesh(geometry, material);
@@ -634,10 +726,10 @@
                 // Add bullet trail with rarity color
                 this.trail = new THREE.Line(
                     new THREE.BufferGeometry().setFromPoints([origin.clone(), origin.clone()]),
-                    new THREE.LineBasicMaterial({ 
-                        color: bulletColor, 
-                        transparent: true, 
-                        opacity: 0.5 
+                    new THREE.LineBasicMaterial({
+                        color: bulletColor,
+                        transparent: true,
+                        opacity: 0.5
                     })
                 );
                 scene.add(this.trail);
@@ -684,7 +776,7 @@
                 }
 
                 // Check for hits with player
-                if (game.player && game.player.health > 0) {
+                if (game.player && game.player.health > 0 && !game.player.isDead) {
                     const intersection = this.raycaster.intersectObject(game.player.mesh);
                     if (intersection.length > 0 && intersection[0].distance < this.velocity * dt) {
                         game.player.takeDamage(this.damage);
@@ -743,15 +835,32 @@
                 const particles = new THREE.Points(particleGeometry, particleMaterial);
                 this.scene.add(particles);
 
+                // Clean up particles after 1 second
                 setTimeout(() => {
-                    this.scene.remove(particles);
+                    if (particles.parent) {
+                        this.scene.remove(particles);
+                        particles.geometry.dispose();
+                        particles.material.dispose();
+                    }
                 }, 1000);
             }
 
             remove() {
                 this.alive = false;
-                this.scene.remove(this.mesh);
-                this.scene.remove(this.trail);
+                
+                // Remove mesh and dispose geometry/material
+                if (this.mesh.parent) {
+                    this.scene.remove(this.mesh);
+                    this.mesh.geometry.dispose();
+                    this.mesh.material.dispose();
+                }
+                
+                // Remove trail and dispose geometry/material
+                if (this.trail.parent) {
+                    this.scene.remove(this.trail);
+                    this.trail.geometry.dispose();
+                    this.trail.material.dispose();
+                }
             }
         }
 
@@ -763,98 +872,144 @@
                 this.history = [];
                 this.historyIndex = -1;
                 this.isOpen = false;
-                
+                this.isPaused = false;
+
                 // Console elements
                 this.consoleElement = document.getElementById('console');
                 this.outputElement = document.getElementById('console-output');
                 this.inputElement = document.getElementById('console-input');
-                
+
                 // Setup event listeners
                 this.setupConsole();
-                
+
                 // Add welcome message
-                this.print("GTA 5 Mini - Console v1.0");
+                this.print("Artificial Autos - Console v1.0", "console-success");
                 this.print("Type 'help' for available commands");
             }
 
             setupConsole() {
                 // Toggle console with ` or ~
                 document.addEventListener('keydown', (e) => {
-                    if (e.key === '`' || e.key === '~') {
+                    if ((e.key === '`' || e.key === '~')) {
                         e.preventDefault();
                         this.toggle();
+                        return;
                     }
-                    
-                    // Handle console-specific keys
+
+                    // Handle console-specific keys when open
                     if (this.isOpen) {
-                        if (e.key === 'Escape') {
-                            this.toggle();
+                        // Don't interfere with normal typing in the input field
+                        if (document.activeElement === this.inputElement) {
+                            // Let the input field handle typing naturally
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                this.executeCommand(this.inputElement.value);
+                            } else if (e.key === 'ArrowUp') {
+                                e.preventDefault();
+                                this.navigateHistory(-1);
+                            } else if (e.key === 'ArrowDown') {
+                                e.preventDefault();
+                                this.navigateHistory(1);
+                            }
+                            // All other keys (letters, numbers, backspace, etc.) will work normally
+                            return;
+                        }
+                    }
+                });
+
+                // Focus input when console is opened
+                this.consoleElement.addEventListener('click', () => {
+                    this.inputElement.focus();
+                });
+
+                // Handle input field events
+                this.inputElement.addEventListener('keydown', (e) => {
+                    if (this.isOpen) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.executeCommand(this.inputElement.value);
                         } else if (e.key === 'ArrowUp') {
                             e.preventDefault();
                             this.navigateHistory(-1);
                         } else if (e.key === 'ArrowDown') {
                             e.preventDefault();
                             this.navigateHistory(1);
-                        } else if (e.key === 'Enter') {
-                            e.preventDefault();
-                            this.executeCommand(this.inputElement.value);
                         }
+                        // All other keys will work normally for typing
                     }
-                });
-
-                // Focus input when console is opened
-                this.inputElement.addEventListener('focus', () => {
-                    document.activeElement.blur();
-                    setTimeout(() => this.inputElement.focus(), 10);
                 });
             }
 
             toggle() {
                 this.isOpen = !this.isOpen;
+                this.isPaused = this.isOpen;
                 this.consoleElement.style.display = this.isOpen ? 'block' : 'none';
-                
+
                 if (this.isOpen) {
-                    this.inputElement.focus();
-                    this.print("> Console opened");
+                    // Freeze game and unlock mouse
+                    this.game.paused = true;
+                    document.exitPointerLock();
+                    document.getElementById('crosshair').style.display = 'none';
+                    document.getElementById('controls-hint').style.display = 'none';
+                    
+                    // Clear and focus input
+                    this.inputElement.value = '';
+                    setTimeout(() => {
+                        this.inputElement.focus();
+                    }, 10);
+                    
+                    this.print("> Console opened (Game Paused)", "console-success");
                 } else {
-                    this.print("> Console closed");
+                    // Resume game and hide console
+                    this.game.paused = false;
+                    // Lock mouse again
+                    if (!this.game.loading && !this.game.paused && !this.game.player.isDead) {
+                        setTimeout(() => {
+                            document.body.requestPointerLock();
+                        }, 100);
+                    }
+                    document.getElementById('crosshair').style.display = 'block';
+                    document.getElementById('controls-hint').style.display = 'block';
+                    this.print("> Console closed (Game Resumed)", "console-success");
+                    // Clear input
+                    this.inputElement.value = '';
                 }
             }
 
             print(message, type = "normal") {
                 const line = document.createElement('div');
                 line.className = `console-line ${type}`;
-                
+
                 // Add timestamp
                 const now = new Date();
                 const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-                
+
                 if (type === "normal") {
                     line.innerHTML = `<span class="console-prompt">[${timeStr}]</span> ${message}`;
                 } else {
                     line.innerHTML = `<span class="console-prompt">[${timeStr}]</span> <span class="${type}">${message}</span>`;
                 }
-                
+
                 this.outputElement.appendChild(line);
                 this.outputElement.scrollTop = this.outputElement.scrollHeight;
             }
 
             executeCommand(command) {
                 if (!command.trim()) return;
-                
+
                 // Add to history
                 this.history.push(command);
                 this.historyIndex = this.history.length;
-                
+
                 // Display command
                 this.print(`> ${command}`, "console-prompt");
-                
+
                 // Parse and execute command
-                const parts = command.trim().toLowerCase().split(' ');
-                const cmd = parts[0];
+                const parts = command.trim().split(' ');
+                const cmd = parts[0].toLowerCase();
                 const args = parts.slice(1);
-                
-                switch(cmd) {
+
+                switch (cmd) {
                     case 'help':
                         this.showHelp();
                         break;
@@ -891,20 +1046,40 @@
                     case 'list.rarities':
                         this.listRarities();
                         break;
+                    case 'time.day':
+                        this.setTime(true);
+                        break;
+                    case 'time.night':
+                        this.setTime(false);
+                        break;
+                    case 'weather.fog':
+                        this.setWeather('fog');
+                        break;
+                    case 'weather.clear':
+                        this.setWeather('clear');
+                        break;
                     default:
-                        this.print(`Unknown command: ${cmd}`, "console-error");
+                        this.print(`Unknown command: ${parts[0]}`, "console-error");
                 }
-                
+
                 // Clear input
                 this.inputElement.value = '';
+                // Keep focus on input
+                setTimeout(() => {
+                    this.inputElement.focus();
+                }, 10);
             }
 
             navigateHistory(direction) {
                 if (this.history.length === 0) return;
-                
+
                 this.historyIndex = Math.max(0, Math.min(this.history.length - 1, this.historyIndex + direction));
                 if (this.historyIndex >= 0 && this.historyIndex < this.history.length) {
                     this.inputElement.value = this.history[this.historyIndex];
+                    // Move cursor to end
+                    setTimeout(() => {
+                        this.inputElement.selectionStart = this.inputElement.selectionEnd = this.inputElement.value.length;
+                    }, 0);
                 }
             }
 
@@ -912,6 +1087,8 @@
                 this.print("Available commands:", "console-success");
                 this.print("  help - Show this help message");
                 this.print("  player.addgun <weapon> <rarity> - Add/upgrade a weapon");
+                this.print("    Weapons: pistol, shotgun, rifle");
+                this.print("    Rarities: common, uncommon, rare, epic, legendary, exotic");
                 this.print("  player.giveammo <amount> - Give ammo to current weapon");
                 this.print("  player.health <amount> - Set player health");
                 this.print("  player.armor <amount> - Set player armor");
@@ -921,6 +1098,10 @@
                 this.print("  wanted <level> - Set wanted level (0-5)");
                 this.print("  list.weapons - List available weapons");
                 this.print("  list.rarities - List rarity levels");
+                this.print("  time.day - Set time to day");
+                this.print("  time.night - Set time to night");
+                this.print("  weather.fog - Enable fog");
+                this.print("  weather.clear - Clear weather");
                 this.print("  clear - Clear console");
             }
 
@@ -931,28 +1112,56 @@
                     this.print("Rarities: common, uncommon, rare, epic, legendary, exotic", "console-warning");
                     return;
                 }
+
+                // Convert to proper case for weapon name
+                const weaponInput = args[0].toLowerCase();
+                let weaponName;
                 
-                const weaponName = args[0].toUpperCase();
-                const rarityName = args.length > 1 ? args[1].toUpperCase() : "COMMON";
+                switch(weaponInput) {
+                    case "pistol":
+                        weaponName = "Pistol";
+                        break;
+                    case "shotgun":
+                        weaponName = "Shotgun";
+                        break;
+                    case "rifle":
+                        weaponName = "Rifle";
+                        break;
+                    case "carbine": // Also accept carbine for rifle
+                        weaponName = "Rifle";
+                        break;
+                    case "fists":
+                        weaponName = "Fists";
+                        break;
+                    default:
+                        this.print(`Invalid weapon: ${args[0]}`, "console-error");
+                        this.print("Available weapons: pistol, shotgun, rifle", "console-warning");
+                        return;
+                }
+
+                // Convert rarity to uppercase
+                const rarityInput = args.length > 1 ? args[1].toLowerCase() : "common";
+                const rarityMap = {
+                    "common": "COMMON",
+                    "uncommon": "UNCOMMON", 
+                    "rare": "RARE",
+                    "epic": "EPIC",
+                    "legendary": "LEGENDARY",
+                    "exotic": "EXOTIC"
+                };
                 
-                // Validate weapon
-                if (!BASE_WEAPONS[weaponName]) {
-                    this.print(`Invalid weapon: ${weaponName}`, "console-error");
-                    this.print("Available weapons: Pistol, Shotgun, Rifle", "console-warning");
+                const rarityName = rarityMap[rarityInput];
+                
+                if (!rarityName) {
+                    this.print(`Invalid rarity: ${args.length > 1 ? args[1] : "common"}`, "console-error");
+                    this.print("Available rarities: common, uncommon, rare, epic, legendary, exotic", "console-warning");
                     return;
                 }
-                
-                // Validate rarity
-                if (!RARITIES[rarityName]) {
-                    this.print(`Invalid rarity: ${rarityName}`, "console-error");
-                    this.print("Available rarities: COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, EXOTIC", "console-warning");
-                    return;
-                }
-                
+
                 // Add/upgrade weapon
                 const player = this.game.player;
                 const success = player.addWeapon(weaponName, rarityName);
-                
+
                 if (success) {
                     this.print(`Added ${rarityName} ${weaponName}`, "console-success");
                     player.equipWeapon(weaponName);
@@ -964,7 +1173,7 @@
             giveAmmo(args) {
                 const amount = parseInt(args[0]) || 100;
                 const player = this.game.player;
-                
+
                 if (player.weapon) {
                     player.weapon.reserve = Math.min(player.weapon.reserve + amount, 999);
                     player.updateHUD();
@@ -1021,7 +1230,7 @@
             setWanted(args) {
                 const level = parseInt(args[0]) || 0;
                 this.game.wantedLevel = Math.min(Math.max(level, 0), 5);
-                
+
                 // Update UI
                 const container = document.getElementById('wanted');
                 container.innerHTML = "";
@@ -1030,22 +1239,47 @@
                     s.className = 'star' + (i < this.game.wantedLevel ? ' active' : '');
                     container.appendChild(s);
                 }
-                
+
                 this.print(`Wanted level set to ${level}`, "console-success");
             }
 
             listWeapons() {
-                this.print("Available weapons:", "console-success");
-                for (const weapon in BASE_WEAPONS) {
-                    this.print(`  ${weapon}`, "console-warning");
-                }
+                this.print("Available weapons (case-insensitive):", "console-success");
+                this.print("  pistol", "console-warning");
+                this.print("  shotgun", "console-warning");
+                this.print("  rifle", "console-warning");
+                this.print("  fists", "console-warning");
             }
 
             listRarities() {
-                this.print("Rarity levels:", "console-success");
-                for (const rarity in RARITIES) {
-                    const color = RARITIES[rarity].color.toString(16).padStart(6, '0');
-                    this.print(`  <span style="color:#${color}">${rarity}</span> - ${RARITIES[rarity].damageMultiplier}x damage`, "console-warning");
+                this.print("Rarity levels (case-insensitive):", "console-success");
+                this.print("  common - 1.0x damage", "console-warning");
+                this.print("  uncommon - 1.2x damage", "console-warning");
+                this.print("  rare - 1.5x damage", "console-warning");
+                this.print("  epic - 1.8x damage", "console-warning");
+                this.print("  legendary - 2.2x damage", "console-warning");
+                this.print("  exotic - 3.0x damage", "console-warning");
+            }
+
+            setTime(isDay) {
+                if (isDay) {
+                    this.game.scene.background = new THREE.Color(0x87CEEB);
+                    this.game.scene.fog.color.set(0x87CEEB);
+                    this.print("Time set to day", "console-success");
+                } else {
+                    this.game.scene.background = new THREE.Color(0x111118);
+                    this.game.scene.fog.color.set(0x111118);
+                    this.print("Time set to night", "console-success");
+                }
+            }
+
+            setWeather(type) {
+                if (type === 'fog') {
+                    this.game.scene.fog = new THREE.FogExp2(0x222222, 0.01);
+                    this.print("Fog enabled", "console-success");
+                } else {
+                    this.game.scene.fog = new THREE.FogExp2(0x111118, 0.002);
+                    this.print("Weather cleared", "console-success");
                 }
             }
         }
@@ -1073,7 +1307,7 @@
             update(dt) {
                 // Smoothly interpolate yaw
                 this.currentYaw = THREE.MathUtils.lerp(this.currentYaw, this.yaw, this.smoothSpeed * dt);
-                
+
                 const offset = new THREE.Vector3(
                     Math.sin(this.currentYaw) * Math.cos(this.pitch),
                     Math.sin(this.pitch),
@@ -1100,11 +1334,14 @@
                 this.inVehicle = null;
                 this.godMode = false;
                 this.isReloading = false;
+                this.isDead = false;
+                this.respawnTimer = 0;
+                this.deathTime = 0;
 
                 // First person camera settings
                 this.camera.position.set(0, 5, 25);
                 this.camera.rotation.order = 'YXZ';
-                
+
                 // Mouse look variables
                 this.yaw = 0;
                 this.pitch = 0;
@@ -1130,53 +1367,145 @@
                 this.inventory = {
                     "Fists": { rarity: "COMMON", level: 0 }
                 };
-                
+
                 this.raycaster = new THREE.Raycaster();
                 this.equipWeapon("Fists");
+
+                // Death screen elements
+                this.deathScreen = document.getElementById('death-screen');
+                this.respawnTimerElement = document.getElementById('respawn-timer');
             }
 
             takeDamage(amount) {
-                if (this.godMode) return;
-                
+                if (this.godMode || this.isDead) return;
+
                 if (this.armor > 0) {
                     this.armor = Math.max(0, this.armor - amount);
                 } else {
                     this.health = Math.max(0, this.health - amount);
                 }
-                
+
                 // Update UI
                 document.getElementById('health').style.width = `${this.health}%`;
                 document.getElementById('armor').style.width = `${this.armor}%`;
-                
+
                 // Flash red screen effect
                 document.body.style.backgroundColor = '#ff0000';
                 setTimeout(() => {
                     document.body.style.backgroundColor = '#000000';
                 }, 100);
-                
-                if (this.health <= 0) {
+
+                if (this.health <= 0 && !this.isDead) {
                     this.die();
                 }
             }
 
             die() {
+                if (this.isDead) return;
+                
+                this.isDead = true;
+                this.deathTime = Date.now();
+                this.respawnTimer = 5; // 5 seconds until respawn
+                
+                // Exit vehicle if in one
+                if (this.inVehicle) {
+                    this.inVehicle = null;
+                    this.vehicleCamera = null;
+                }
+                
+                // Show death screen
+                this.deathScreen.style.display = 'flex';
+                this.updateRespawnTimer();
+                
+                // Add death message to killfeed
+                if (this.game) {
+                    this.game.addKillfeed("You died!");
+                }
+                
+                // Unlock mouse
+                document.exitPointerLock();
+                document.getElementById('crosshair').style.display = 'none';
+                
                 console.log("Player died!");
-                // Could add respawn logic here
+            }
+
+            respawn() {
+                this.isDead = false;
+                this.health = 100;
+                this.armor = 50;
+                
+                // Reset position
+                this.mesh.position.set(0, 5, 25);
+                this.velocity.set(0, 0, 0);
+                this.yaw = 0;
+                this.pitch = 0;
+                
+                // Reset camera
+                this.camera.position.copy(this.mesh.position);
+                this.camera.position.y += 1.7;
+                this.camera.rotation.set(0, 0, 0);
+                
+                // Reset vehicle state
+                this.inVehicle = null;
+                this.vehicleCamera = null;
+                
+                // Hide death screen
+                this.deathScreen.style.display = 'none';
+                
+                // Update UI
+                document.getElementById('health').style.width = `${this.health}%`;
+                document.getElementById('armor').style.width = `${this.armor}%`;
+                document.getElementById('crosshair').style.display = 'block';
+                
+                // Reset wanted level
+                if (this.game) {
+                    this.game.wantedLevel = 0;
+                    const container = document.getElementById('wanted');
+                    container.innerHTML = "";
+                    for (let i = 0; i < 5; i++) {
+                        const s = document.createElement('div');
+                        s.className = 'star';
+                        container.appendChild(s);
+                    }
+                    this.game.addKillfeed("Respawning...");
+                }
+                
+                // Request pointer lock again
+                if (!this.game.paused) {
+                    setTimeout(() => {
+                        document.body.requestPointerLock();
+                    }, 100);
+                }
+            }
+
+            updateRespawnTimer() {
+                if (!this.isDead) return;
+                
+                const timeLeft = Math.max(0, this.respawnTimer - (Date.now() - this.deathTime) / 1000);
+                
+                if (timeLeft <= 0) {
+                    this.respawn();
+                } else {
+                    this.respawnTimerElement.textContent = `Respawning in ${Math.ceil(timeLeft)} seconds...`;
+                    setTimeout(() => this.updateRespawnTimer(), 100);
+                }
             }
 
             handleMouseMove(e) {
+                if (this.isDead) return;
+                
                 if (this.inVehicle && this.vehicleCamera) {
                     // In vehicle: use third person camera mouse controls
                     this.vehicleCamera.handleMouse(e);
                 } else {
                     // On foot: use first person mouse controls
                     if (!document.pointerLockElement) return;
-                    
+
                     this.yaw -= e.movementX * this.mouseSensitivity;
                     this.pitch -= e.movementY * this.mouseSensitivity;
-                    
-                    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI/2, Math.PI/2);
-                    
+
+                    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI / 2, Math.PI / 2);
+
                     this.camera.rotation.y = this.yaw;
                     this.camera.rotation.x = this.pitch + this.recoil;
                 }
@@ -1186,9 +1515,9 @@
             createWeapon(name, rarity) {
                 const base = BASE_WEAPONS[name];
                 const rarityData = RARITIES[rarity];
-                
+
                 if (!base || !rarityData) return null;
-                
+
                 return {
                     name: base.name,
                     rarity: rarity,
@@ -1229,11 +1558,11 @@
                     const currentRarity = this.inventory[name].rarity;
                     const currentLevel = Object.keys(RARITIES).indexOf(currentRarity);
                     const newLevel = Object.keys(RARITIES).indexOf(rarity);
-                    
+
                     if (newLevel > currentLevel) {
                         this.inventory[name].rarity = rarity;
                         console.log(`Upgraded ${name} to ${rarity}`);
-                        
+
                         // If this weapon is currently equipped, update it
                         if (this.weapon && this.weapon.name === name) {
                             this.equipWeapon(name);
@@ -1251,14 +1580,14 @@
 
             updateHUD() {
                 if (!this.weapon) return;
-                
+
                 const weaponName = this.weapon.name;
-                const ammoText = this.weapon.max > 0 ? 
+                const ammoText = this.weapon.max > 0 ?
                     `${this.weapon.ammo}/${this.weapon.reserve}` : "∞";
                 const rarityName = this.weapon.rarity || "COMMON";
                 const rarityColor = RARITIES[rarityName]?.color || 0x888888;
                 const rarityClass = rarityName.toLowerCase();
-                
+
                 document.getElementById('weapon-name').textContent = `${weaponName} (${rarityName})`;
                 document.getElementById('ammo').textContent = ammoText;
                 document.getElementById('current-weapon').textContent = `${weaponName} (${rarityName})`;
@@ -1269,23 +1598,23 @@
             }
 
             reload() {
-                if (!this.weapon || this.isReloading || this.weapon.max === 0) return;
-                
+                if (!this.weapon || this.isReloading || this.weapon.max === 0 || this.isDead) return;
+
                 // Check if we have reserve ammo
                 if (this.weapon.reserve <= 0) {
                     this.game?.addKillfeed("Out of ammo!");
                     return;
                 }
-                
+
                 // Check if we need to reload
                 if (this.weapon.ammo >= this.weapon.max) return;
-                
+
                 this.isReloading = true;
-                
+
                 // Calculate ammo needed
                 const ammoNeeded = this.weapon.max - this.weapon.ammo;
                 const ammoToAdd = Math.min(ammoNeeded, this.weapon.reserve);
-                
+
                 // Reload animation delay
                 setTimeout(() => {
                     this.weapon.ammo += ammoToAdd;
@@ -1297,7 +1626,7 @@
             }
 
             shoot(game) {
-                if (!this.weapon || this.weapon.ammo <= 0 || game.fireCooldown > 0 || this.isReloading) return;
+                if (!this.weapon || this.weapon.ammo <= 0 || game.fireCooldown > 0 || this.isReloading || this.isDead) return;
                 if (this.weapon.name === "Fists") return;
 
                 game.fireCooldown = this.weapon.fireRate;
@@ -1351,20 +1680,28 @@
             }
 
             update(dt, input, game) {
+                if (this.isDead) {
+                    // Update respawn timer
+                    if (Date.now() - this.deathTime >= this.respawnTimer * 1000) {
+                        this.respawn();
+                    }
+                    return;
+                }
+
                 if (this.inVehicle) {
                     // Player is in vehicle
                     this.mesh.position.copy(this.inVehicle.mesh.position);
                     this.mesh.position.y += 0.5;
                     this.mesh.visible = false;
                     this.camera.visible = false;
-                    
+
                     // Update vehicle camera
                     if (this.vehicleCamera) {
                         this.vehicleCamera.update(dt);
                     }
                     return;
                 }
-                
+
                 // Player is on foot
                 this.mesh.visible = false;
                 this.camera.visible = true;
@@ -1374,11 +1711,11 @@
 
                 // Movement based on camera direction
                 const speed = input.sprint ? SPRINT_SPEED : PLAYER_SPEED;
-                
+
                 const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
                 forward.y = 0;
                 forward.normalize();
-                
+
                 const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0));
 
                 const move = new THREE.Vector3();
@@ -1436,7 +1773,7 @@
 
                 // Recoil Decay
                 this.recoil = Math.max(0, this.recoil * 0.9);
-                
+
                 // Update first person camera position
                 this.camera.position.copy(this.mesh.position);
                 this.camera.position.y += 1.7;
@@ -1511,7 +1848,7 @@
                 // Police lights for first car
                 if (index === 0) {
                     const lightGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 8);
-                    
+
                     // Red light
                     const redLight = new THREE.Mesh(
                         lightGeo,
@@ -1549,11 +1886,11 @@
                     new THREE.Vector3(0, 0, 1).applyQuaternion(this.mesh.quaternion),
                     this.speed * dt
                 );
-                
+
                 // Check collision with buildings
                 let hitBuilding = false;
                 const carBox = new THREE.Box3().setFromCenterAndSize(futurePos, new THREE.Vector3(2.2, 1, 4.8));
-                
+
                 for (const b of game.buildings) {
                     if (b.box.intersectsBox(carBox)) {
                         this.speed *= -0.5;
@@ -1591,13 +1928,13 @@
 
                 // Keep within world bounds
                 const LIM = WORLD_SIZE / 2 - 10;
-                if (this.mesh.position.x < -LIM || this.mesh.position.x > LIM) { 
-                    this.speed *= -0.5; 
-                    this.mesh.position.x = Math.sign(this.mesh.position.x) * LIM; 
+                if (this.mesh.position.x < -LIM || this.mesh.position.x > LIM) {
+                    this.speed *= -0.5;
+                    this.mesh.position.x = Math.sign(this.mesh.position.x) * LIM;
                 }
-                if (this.mesh.position.z < -LIM || this.mesh.position.z > LIM) { 
-                    this.speed *= -0.5; 
-                    this.mesh.position.z = Math.sign(this.mesh.position.z) * LIM; 
+                if (this.mesh.position.z < -LIM || this.mesh.position.z > LIM) {
+                    this.speed *= -0.5;
+                    this.mesh.position.z = Math.sign(this.mesh.position.z) * LIM;
                 }
             }
         }
@@ -1626,7 +1963,7 @@
 
                 // Simple NPC model
                 const group = new THREE.Group();
-                
+
                 // Color based on type
                 const color = isCop ? 0x0000ff : new THREE.Color().setHSL(Math.random(), 0.8, 0.5);
 
@@ -1651,11 +1988,11 @@
 
             dropWeaponUpgrade(game) {
                 if (!this.isCop) return;
-                
+
                 // Drop weapon upgrade with this cop's rarity
                 const weaponTypes = ["Pistol", "Shotgun", "Rifle"];
                 const randomWeapon = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
-                
+
                 // Create upgrade pickup
                 const upgrade = new WeaponUpgradePickup(
                     game.scene,
@@ -1663,7 +2000,7 @@
                     randomWeapon,
                     this.weaponRarity
                 );
-                
+
                 game.drops.push(upgrade);
                 game.addKillfeed(`${this.weaponRarity} ${randomWeapon} dropped!`);
             }
@@ -1681,7 +2018,7 @@
 
                 if (this.health <= 0) {
                     this.alive = false;
-                    
+
                     // Drop weapon upgrade if cop
                     if (this.isCop) {
                         this.dropWeaponUpgrade(game);
@@ -1705,32 +2042,37 @@
                     setTimeout(() => {
                         game.scene.remove(this.root);
                         game.scene.remove(blood);
+                        // Dispose of geometries and materials
+                        this.mesh.geometry.dispose();
+                        this.mesh.material.dispose();
+                        blood.geometry.dispose();
+                        blood.material.dispose();
                     }, 10000);
                 }
             }
 
             update(dt, game) {
                 if (!this.alive) return;
-                
+
                 // Update shoot cooldown
                 if (this.shootCooldown > 0) {
                     this.shootCooldown -= dt;
                 }
-                
-                // Cops attack player
-                if (this.isCop && game.player.health > 0) {
+
+                // Cops attack player (only if player is alive)
+                if (this.isCop && game.player.health > 0 && !game.player.isDead) {
                     const distanceToPlayer = this.root.position.distanceTo(game.player.mesh.position);
-                    
+
                     if (distanceToPlayer < this.awarenessRadius) {
                         // Face player
                         const lookAtPlayer = new THREE.Vector3().subVectors(game.player.mesh.position, this.root.position);
                         lookAtPlayer.y = 0;
                         this.root.lookAt(this.root.position.clone().add(lookAtPlayer));
-                        
+
                         // Check line of sight
                         this.raycaster.set(this.root.position, lookAtPlayer.normalize());
                         let canSeePlayer = false;
-                        
+
                         // Check if player is visible (not behind buildings)
                         for (const building of game.buildings) {
                             const intersects = this.raycaster.intersectObject(building.mesh);
@@ -1740,20 +2082,20 @@
                             }
                             canSeePlayer = true;
                         }
-                        
+
                         if (canSeePlayer && distanceToPlayer < this.attackRange) {
                             // Set target position (aim for center mass)
                             this.targetPosition = game.player.mesh.position.clone().add(new THREE.Vector3(0, 1, 0));
-                            
+
                             // Shoot at player (simplified for NPCs)
                             if (this.shootCooldown <= 0) {
                                 this.shootCooldown = 1.0;
-                                
+
                                 // Create bullet
                                 const origin = this.root.position.clone();
                                 origin.y += 1.5;
                                 const direction = lookAtPlayer.normalize();
-                                
+
                                 // Add inaccuracy
                                 if (Math.random() > this.accuracy) {
                                     direction.add(new THREE.Vector3(
@@ -1762,7 +2104,7 @@
                                         0
                                     )).normalize();
                                 }
-                                
+
                                 const bullet = new Bullet(game.scene, origin, direction, 15, "Pistol", this.weaponRarity, false);
                                 game.bullets.push(bullet);
                             }
@@ -1812,7 +2154,7 @@
                 this.weaponType = weaponType;
                 this.rarity = rarity;
                 this.color = RARITIES[rarity].color;
-                
+
                 // Create pickup mesh with rarity color
                 this.mesh = new THREE.Mesh(
                     new THREE.BoxGeometry(0.6, 0.6, 0.6),
@@ -1824,58 +2166,99 @@
                         roughness: 0.2
                     })
                 );
-                
+
                 this.mesh.position.copy(position);
                 this.mesh.position.y = 1;
                 scene.add(this.mesh);
-                
+
                 // Add glow effect
                 const light = new THREE.PointLight(this.color, 2, 8);
                 this.mesh.add(light);
-                
-                // Add rarity text above
+
+                // Add rarity text above using Sprite with canvas texture
                 this.createRarityText();
-                
+
                 // Animate
                 this.animate();
             }
-            
+
             createRarityText() {
-                // Create floating text effect using geometry
-                const textHeight = 0.3;
-                const textDepth = 0.05;
-                const textGeometry = new THREE.BoxGeometry(0.8, textHeight, textDepth);
-                const textMaterial = new THREE.MeshBasicMaterial({ 
-                    color: this.color,
+                // Create canvas for text
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 256;
+                canvas.height = 128;
+
+                // Clear to transparent
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Set up text style - BOLDER
+                context.font = 'bold 40px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+
+                // Draw the weapon name with black border (stroke) and white fill
+                context.strokeStyle = '#000000';
+                context.lineWidth = 6; // Thick black border
+                context.fillStyle = '#FFFFFF';
+
+                // Weapon name
+                context.strokeText(this.weaponType, canvas.width / 2, canvas.height / 2 - 25);
+                context.fillText(this.weaponType, canvas.width / 2, canvas.height / 2 - 25);
+
+                // Rarity text with the rarity color and black border
+                context.font = 'bold 30px Arial';
+                const rarityColor = '#' + this.color.toString(16).padStart(6, '0');
+                context.fillStyle = rarityColor;
+
+                // Draw the rarity text with black border
+                context.strokeText(this.rarity, canvas.width / 2, canvas.height / 2 + 25);
+                context.fillText(this.rarity, canvas.width / 2, canvas.height / 2 + 25);
+
+                // Create texture from canvas
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.minFilter = THREE.LinearFilter;
+
+                // Create sprite
+                const spriteMaterial = new THREE.SpriteMaterial({
+                    map: texture,
                     transparent: true,
-                    opacity: 0.8
+                    depthTest: false
                 });
-                
-                this.textMesh = new THREE.Mesh(textGeometry, textMaterial);
-                this.textMesh.position.set(0, 1, 0);
-                this.mesh.add(this.textMesh);
+
+                this.textSprite = new THREE.Sprite(spriteMaterial);
+                this.textSprite.scale.set(3, 1.5, 1);
+                this.textSprite.position.set(0, 1.5, 0);
+                this.mesh.add(this.textSprite);
             }
-            
+
             animate() {
+                // Only animate if mesh is still in the scene
                 if (!this.mesh.parent) return;
-                
-                // Rotate and float
+
+                // Rotate and float - text will rotate with the mesh as it's a child
                 this.mesh.rotation.y += 0.03;
                 this.mesh.position.y = 1 + Math.sin(Date.now() * 0.003) * 0.3;
-                
-                // Pulse the text
-                if (this.textMesh) {
-                    this.textMesh.scale.setScalar(1 + Math.sin(Date.now() * 0.005) * 0.2);
-                }
-                
+
+                // No need for lookAt - text rotates with the parent mesh
+                // The sprite will always face the camera by default (billboard behavior)
+
                 requestAnimationFrame(() => this.animate());
             }
-            
+
             remove() {
-                this.scene.remove(this.mesh);
+                if (this.mesh.parent) {
+                    this.scene.remove(this.mesh);
+                    // Dispose of geometries and materials
+                    this.mesh.geometry.dispose();
+                    this.mesh.material.dispose();
+                    if (this.textSprite) {
+                        this.textSprite.material.dispose();
+                        this.textSprite.material.map.dispose();
+                    }
+                }
             }
         }
-
         // ==================== MINIMAP ====================
 
         class Minimap {
@@ -1897,13 +2280,13 @@
 
                 this.ctx.save();
                 this.ctx.scale(zoom, zoom);
-                
+
                 // Use player yaw or vehicle camera yaw
                 let rotation = this.game.player.yaw;
                 if (this.game.player.inVehicle && this.game.player.vehicleCamera) {
                     rotation = this.game.player.vehicleCamera.currentYaw;
                 }
-                
+
                 this.ctx.rotate(rotation);
                 this.ctx.translate(-pPos.x, -pPos.z);
 
@@ -1927,13 +2310,13 @@
                         this.ctx.beginPath();
                         this.ctx.arc(drop.mesh.position.x, drop.mesh.position.z, 8, 0, Math.PI * 2);
                         this.ctx.fill();
-                        
+
                         // Add glow
                         this.ctx.shadowColor = '#' + colorHex;
                         this.ctx.shadowBlur = 15;
                         this.ctx.fill();
                         this.ctx.shadowBlur = 0;
-                        
+
                         // Add rarity letter
                         this.ctx.fillStyle = '#ffffff';
                         this.ctx.font = 'bold 10px Arial';
@@ -1975,32 +2358,34 @@
 
                 this.ctx.restore();
 
-                // Draw Player Arrow
-                this.ctx.fillStyle = "#00ffff";
-                this.ctx.save();
-                
-                let arrowRotation = this.game.player.yaw;
-                if (this.game.player.inVehicle && this.game.player.vehicleCamera) {
-                    arrowRotation = this.game.player.vehicleCamera.currentYaw;
+                // Draw Player Arrow (only if alive)
+                if (!this.game.player.isDead) {
+                    this.ctx.fillStyle = "#00ffff";
+                    this.ctx.save();
+
+                    let arrowRotation = this.game.player.yaw;
+                    if (this.game.player.inVehicle && this.game.player.vehicleCamera) {
+                        arrowRotation = this.game.player.vehicleCamera.currentYaw;
+                    }
+
+                    this.ctx.rotate(arrowRotation);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, -15);
+                    this.ctx.lineTo(12, 15);
+                    this.ctx.lineTo(-12, 15);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+
+                    // Add player direction line
+                    this.ctx.strokeStyle = "#00ffff";
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, 0);
+                    this.ctx.lineTo(0, -25);
+                    this.ctx.stroke();
+
+                    this.ctx.restore();
                 }
-                
-                this.ctx.rotate(arrowRotation);
-                this.ctx.beginPath();
-                this.ctx.moveTo(0, -15);
-                this.ctx.lineTo(12, 15);
-                this.ctx.lineTo(-12, 15);
-                this.ctx.closePath();
-                this.ctx.fill();
-                
-                // Add player direction line
-                this.ctx.strokeStyle = "#00ffff";
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.moveTo(0, 0);
-                this.ctx.lineTo(0, -25);
-                this.ctx.stroke();
-                
-                this.ctx.restore();
             }
         }
 
@@ -2016,69 +2401,116 @@
                 this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 this.clock = new THREE.Clock();
 
-                // Environment
-                this.scene.background = new THREE.Color(0x111118);
-                this.scene.fog = new THREE.FogExp2(0x111118, 0.002);
+                // Game state
+                this.paused = false;
+                this.loading = true;
 
-                // Ground
-                this.ground = new THREE.Mesh(
-                    new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE),
-                    new THREE.MeshStandardMaterial({
-                        color: 0x1a1a1a,
-                        roughness: 0.9,
-                        metalness: 0.1
-                    })
-                );
-                this.ground.rotation.x = -Math.PI / 2;
-                this.ground.receiveShadow = true;
-                this.scene.add(this.ground);
+                // Show loading screen
+                this.showLoadingScreen();
 
-                // Grid
-                const grid = new THREE.GridHelper(WORLD_SIZE, 40, 0x444444, 0x222222);
-                this.scene.add(grid);
+                // Start initialization
+                setTimeout(() => this.initialize(), 100);
+            }
 
-                // Lighting
-                const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
-                this.scene.add(ambLight);
+            async initialize() {
+                try {
+                    this.updateLoadingText("Creating environment...", 20);
 
-                const moonLight = new THREE.DirectionalLight(0xaaccff, 0.8);
-                moonLight.position.set(500, 1000, 500);
-                moonLight.castShadow = true;
-                moonLight.shadow.camera.top = 200;
-                moonLight.shadow.camera.bottom = -200;
-                moonLight.shadow.camera.left = -200;
-                moonLight.shadow.camera.right = 200;
-                this.scene.add(moonLight);
+                    // Environment
+                    this.scene.background = new THREE.Color(0x111118);
+                    this.scene.fog = new THREE.FogExp2(0x111118, 0.002);
 
-                // Entities
-                this.player = new FirstPersonPlayer(this.scene, this.camera);
-                this.player.game = this; // Reference to game for killfeed
-                
-                this.vehicles = [];
-                this.npcs = [];
-                this.bullets = [];
-                this.buildings = [];
-                this.drops = []; // Now includes weapon upgrades
-                this.wantedLevel = 0;
-                this.fireCooldown = 0;
+                    this.updateLoadingText("Generating terrain...", 40);
 
-                this.radio = new SynthRadio();
-                this.minimap = new Minimap(this);
-                
-                // Initialize console system
-                this.console = new GameConsole(this);
+                    // Ground
+                    this.ground = new THREE.Mesh(
+                        new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE),
+                        new THREE.MeshStandardMaterial({
+                            color: 0x1a1a1a,
+                            roughness: 0.9,
+                            metalness: 0.1
+                        })
+                    );
+                    this.ground.rotation.x = -Math.PI / 2;
+                    this.ground.receiveShadow = true;
+                    this.scene.add(this.ground);
 
-                this.input = { forward: 0, backward: 0, left: 0, right: 0, sprint: false, jump: false, shoot: false, reload: false };
+                    // Grid
+                    const grid = new THREE.GridHelper(WORLD_SIZE, 40, 0x444444, 0x222222);
+                    this.scene.add(grid);
 
-                this.spawnWorld();
-                this.setupControls();
-                this.animate();
+                    this.updateLoadingText("Setting up lighting...", 60);
+
+                    // Lighting
+                    const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
+                    this.scene.add(ambLight);
+
+                    const moonLight = new THREE.DirectionalLight(0xaaccff, 0.8);
+                    moonLight.position.set(500, 1000, 500);
+                    moonLight.castShadow = true;
+                    moonLight.shadow.camera.top = 200;
+                    moonLight.shadow.camera.bottom = -200;
+                    moonLight.shadow.camera.left = -200;
+                    moonLight.shadow.camera.right = 200;
+                    this.scene.add(moonLight);
+
+                    this.updateLoadingText("Creating player...", 80);
+
+                    // Entities
+                    this.player = new FirstPersonPlayer(this.scene, this.camera);
+                    this.player.game = this; // Reference to game for killfeed
+
+                    this.vehicles = [];
+                    this.npcs = [];
+                    this.bullets = [];
+                    this.buildings = [];
+                    this.drops = []; // Now includes weapon upgrades
+                    this.wantedLevel = 0;
+                    this.fireCooldown = 0;
+
+                    this.updateLoadingText("Finalizing systems...", 90);
+
+                    this.radio = new SynthRadio();
+                    this.minimap = new Minimap(this);
+
+                    // Initialize console system
+                    this.console = new GameConsole(this);
+
+                    this.input = { forward: 0, backward: 0, left: 0, right: 0, sprint: false, jump: false, shoot: false, reload: false };
+
+                    this.spawnWorld();
+                    this.setupControls();
+
+                    // Hide loading screen
+                    setTimeout(() => {
+                        this.hideLoadingScreen();
+                        this.animate();
+                    }, 500);
+
+                } catch (error) {
+                    console.error("Game initialization error:", error);
+                    document.getElementById('loading-text').textContent = `Error: ${error.message}`;
+                }
+            }
+
+            showLoadingScreen() {
+                document.getElementById('loading-screen').style.display = 'flex';
+            }
+
+            hideLoadingScreen() {
+                document.getElementById('loading-screen').style.display = 'none';
+                this.loading = false;
+            }
+
+            updateLoadingText(text, progress) {
+                document.getElementById('loading-text').textContent = text;
+                document.getElementById('loading-bar').style.width = `${progress}%`;
             }
 
             spawnWorld() {
                 // 1. Buildings
                 const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
-                const wallMat = new THREE.MeshStandardMaterial({ 
+                const wallMat = new THREE.MeshStandardMaterial({
                     color: 0x333333,
                     roughness: 0.8,
                     metalness: 0.2
@@ -2196,19 +2628,30 @@
 
                 // Click anywhere to lock pointer for mouse look
                 document.addEventListener('click', () => {
-                    document.body.requestPointerLock();
+                    if (!this.paused && !this.console.isOpen && !this.player.isDead) {
+                        document.body.requestPointerLock();
+                    }
                 });
 
                 // Mouse movement for looking around
-                document.addEventListener('mousemove', e => this.player.handleMouseMove(e));
+                document.addEventListener('mousemove', e => {
+                    if (!this.paused && !this.player.isDead && !this.console.isOpen) {
+                        this.player.handleMouseMove(e);
+                    }
+                });
 
-                // Keyboard controls
-                window.addEventListener('keydown', e => {
-                    // Don't process if console is open (except for console toggle)
-                    if (this.console.isOpen && e.key !== '`' && e.key !== '~') {
+                // Keyboard controls - Only when console is closed
+                document.addEventListener('keydown', (e) => {
+                    // If console is open, don't process game controls
+                    if (this.console.isOpen) {
                         return;
                     }
-                    
+
+                    // Don't process if game is paused or player is dead
+                    if ((this.paused || this.player.isDead) && e.key !== '`' && e.key !== '~') {
+                        return;
+                    }
+
                     switch (e.code) {
                         case 'KeyW': this.input.forward = 1; break;
                         case 'KeyS': this.input.backward = 1; break;
@@ -2221,7 +2664,7 @@
                             const stName = this.radio.toggle();
                             document.getElementById('station').textContent = stName;
                             break;
-                        case 'KeyR': 
+                        case 'KeyR':
                             this.input.reload = true;
                             if (!this.player.isReloading) {
                                 this.player.reload();
@@ -2233,7 +2676,13 @@
                         case 'Digit4': this.player.equipWeapon("Fists"); break;
                     }
                 });
-                window.addEventListener('keyup', e => {
+                
+                document.addEventListener('keyup', (e) => {
+                    // If console is open, don't process game controls
+                    if (this.console.isOpen) {
+                        return;
+                    }
+
                     switch (e.code) {
                         case 'KeyW': this.input.forward = 0; break;
                         case 'KeyS': this.input.backward = 0; break;
@@ -2244,17 +2693,20 @@
                         case 'KeyR': this.input.reload = false; break;
                     }
                 });
-                window.addEventListener('mousedown', e => { 
-                    if (document.pointerLockElement && e.button === 0 && !this.console.isOpen) {
-                        this.input.shoot = true; 
+                
+                window.addEventListener('mousedown', e => {
+                    if (document.pointerLockElement && e.button === 0 && !this.console.isOpen && !this.paused && !this.player.isDead) {
+                        this.input.shoot = true;
                     }
                 });
-                window.addEventListener('mouseup', e => { 
-                    if (e.button === 0) this.input.shoot = false; 
+                window.addEventListener('mouseup', e => {
+                    if (e.button === 0) this.input.shoot = false;
                 });
             }
 
             tryEnterVehicle() {
+                if (this.player.isDead) return;
+                
                 const prompt = document.getElementById('prompt');
 
                 if (this.player.inVehicle) {
@@ -2262,16 +2714,16 @@
                     const car = this.player.inVehicle;
                     this.player.inVehicle = null;
                     this.player.vehicleCamera = null;
-                    
+
                     // Reset player position near car
                     this.player.mesh.position.copy(car.mesh.position).add(new THREE.Vector3(-3, 0, 0));
                     this.player.velocity.set(0, 0, 0);
-                    
+
                     // Reset camera to first person
                     this.camera.visible = true;
                     this.camera.rotation.y = this.player.yaw;
                     this.camera.rotation.x = this.player.pitch;
-                    
+
                     prompt.style.display = 'none';
                     document.getElementById('crosshair').style.display = 'block';
                     return;
@@ -2281,13 +2733,13 @@
                 for (const v of this.vehicles) {
                     if (v.mesh.position.distanceTo(this.player.mesh.position) < 5) {
                         this.player.inVehicle = v;
-                        
+
                         // Create third person camera for vehicle
                         this.player.vehicleCamera = new ThirdPersonCamera(this.camera, v.mesh);
-                        
+
                         // Hide crosshair in vehicle
                         document.getElementById('crosshair').style.display = 'none';
-                        
+
                         prompt.style.display = 'none';
                         this.input.shoot = false;
                         break;
@@ -2297,30 +2749,39 @@
 
             animate() {
                 requestAnimationFrame(() => this.animate());
+
+                // Skip updates if game is paused
+                if (this.paused || this.loading) {
+                    this.renderer.render(this.scene, this.camera);
+                    return;
+                }
+
                 const dt = Math.min(this.clock.getDelta(), 0.05);
 
                 if (this.fireCooldown > 0) this.fireCooldown -= dt;
-                if (this.input.shoot) this.player.shoot(this);
+                if (this.input.shoot && !this.player.isDead) this.player.shoot(this);
 
                 this.player.update(dt, this.input, this);
 
                 // Show/Hide enter prompt
                 let nearCar = false;
-                if (!this.player.inVehicle) {
+                if (!this.player.inVehicle && !this.player.isDead) {
                     for (const v of this.vehicles) {
                         if (v.mesh.position.distanceTo(this.player.mesh.position) < 5) nearCar = true;
                     }
                 }
-                document.getElementById('prompt').style.display = (nearCar || this.player.inVehicle) ? 'block' : 'none';
-                
-                // Show/Hide crosshair based on vehicle status
-                document.getElementById('crosshair').style.display = this.player.inVehicle ? 'none' : 'block';
+                document.getElementById('prompt').style.display = (nearCar || this.player.inVehicle) && !this.player.isDead ? 'block' : 'none';
+
+                // Show/Hide crosshair based on vehicle status and death
+                document.getElementById('crosshair').style.display = (this.player.inVehicle || this.player.isDead) ? 'none' : 'block';
 
                 // Update Vehicles
                 this.vehicles.forEach(v => v.update(dt, v === this.player.inVehicle ? this.input : {}, this));
 
-                // Update NPCs
-                this.npcs.forEach(n => n.update(dt, this));
+                // Update NPCs (only if player is alive)
+                if (!this.player.isDead) {
+                    this.npcs.forEach(n => n.update(dt, this));
+                }
 
                 // Update Bullets
                 for (let i = this.bullets.length - 1; i >= 0; i--) {
@@ -2333,13 +2794,13 @@
                 // Weapon Upgrade Pickups
                 for (let i = this.drops.length - 1; i >= 0; i--) {
                     const drop = this.drops[i];
-                    if (drop.mesh.position.distanceTo(this.player.mesh.position) < 2) {
+                    if (drop.mesh.position.distanceTo(this.player.mesh.position) < 2 && !this.player.isDead) {
                         const isNew = this.player.addWeapon(drop.weaponType, drop.rarity);
                         this.player.equipWeapon(drop.weaponType);
-                        
+
                         const rarityName = drop.rarity.toLowerCase();
-                        this.addKillfeed(isNew ? 
-                            `Acquired ${rarityName} ${drop.weaponType}` : 
+                        this.addKillfeed(isNew ?
+                            `Acquired ${rarityName} ${drop.weaponType}` :
                             `Upgraded ${drop.weaponType} to ${rarityName}`
                         );
 
@@ -2348,9 +2809,11 @@
                     }
                 }
 
-                // Update UI
-                document.getElementById('health').style.width = `${this.player.health}%`;
-                document.getElementById('armor').style.width = `${this.player.armor}%`;
+                // Update UI (only if player is alive)
+                if (!this.player.isDead) {
+                    document.getElementById('health').style.width = `${this.player.health}%`;
+                    document.getElementById('armor').style.width = `${this.player.armor}%`;
+                }
 
                 // Render Map
                 this.minimap.draw();
@@ -2360,7 +2823,10 @@
         }
 
         // START GAME
-        new Game();
+        window.addEventListener('DOMContentLoaded', () => {
+            new Game();
+        });
     </script>
 </body>
+
 </html>
